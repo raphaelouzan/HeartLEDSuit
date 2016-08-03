@@ -5,7 +5,6 @@
  * Variable Components
  */
 #define USE_2ND_STRIP    0
-#define USE_TOUCHSENSORS 0
 #define USE_SETTINGS     1
 #define DEBUG
 //#define DEBUG_ANIMATIONS
@@ -71,6 +70,8 @@ Button button(BUTTON_PIN, false);
  * Sequencing
  */
 AnimationPattern gAnimations[] = {
+
+  {beatTriggered, 0, 0},
   
   {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
@@ -118,16 +119,6 @@ AnimationPattern gDropAnimations[] = {
   {dropped, 100, 200}
 };
 
-#if USE_TOUCHSENSORS
-AnimationPattern gTouchAnimations[] = { 
-  {bpm, 120, 5}, // left 
-  {discostrobe, 120, 4}, // right 
-  {sinelon, 120, 4}, // both touched
-  {fadeOut, 255, 0}, 
-  {beatTriggered, 0, 0}
-};
-#endif
- 
 // Default sequence to main animations
 volatile AnimationPattern* gSequence = gAnimations; 
 // Index number of which pattern is current
