@@ -24,7 +24,7 @@ uint8_t gRenderingSettings = BOTH_STRIPS;
  
 // TODO Currently only SoundReactive uses these palettes, more animations should use them
 // and blend in between for nice transitions
-CRGBPalette16 gPalettes[] = {HeatColors_p, LavaColors_p, RainbowColors_p, 
+CRGBPalette16 gPalettes[] = {RainbowColors_p,RainbowStripeColors_p, LavaColors_p, HeatColors_p, 
     CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p};
 uint8_t gCurrentPaletteIndex = 0;
 
