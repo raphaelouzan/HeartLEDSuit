@@ -44,7 +44,13 @@ Button button(BUTTON_PIN, false);
 /** 
  * Animations
  */ 
+#include "GradientPalettes.h"
 #include "Animations.h"
+// 10 seconds per color palette makes a good demo
+// 20-120 is better for deployment
+#define SECONDS_PER_PALETTE 10
+
+
 
 /* 
  * Settings UI
@@ -144,7 +150,6 @@ void onClick() {
 
 void onDoubleClick() { 
   //Reseting to first animation
-
   PRINT("Double click");
   
   // Assumes first two animations are using palettes
@@ -205,6 +210,7 @@ void showBatteryLevel() {
     leds[i].r = 4-g; 
     leds[i].g = g; 
     leds[i].b = 0; 
+    FastLED.setBrightness(255);
     FastLED.show(); 
     delay(500/ NUM_LEDS);
   }
@@ -297,11 +303,6 @@ void loop() {
   };
 
   show_at_max_brightness_for_power();      
-
-  
-  #if REVERSE_LEDS
-    reverseLeds();
-  #endif  
   
   gHue++;
     
@@ -310,7 +311,7 @@ void loop() {
   #endif
   
   #ifdef DEBUG
-  EVERY_N_MILLISECONDS(2000) {PRINTX("BATTERY LEVEL: ", batteryLevel());}
+  EVERY_N_MILLISECONDS(3000) {PRINTX("BATTERY LEVEL: ", batteryLevel());}
   #endif
 } 
 
@@ -349,16 +350,5 @@ void mirrorLeds() {
   //gRenderingSettings = BOTH_STRIPS;
   
 }
-
-void reverseLeds() {
-  uint8_t left = 0;
-  uint8_t right = STRIP_SIZE-1;
-  while (left < right) {
-    CRGB temp = leds[left];
-    leds[left++] = leds[right];
-    leds[right--] = temp;
-  }
-}
-
 
 

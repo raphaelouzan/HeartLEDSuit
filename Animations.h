@@ -24,12 +24,21 @@ uint8_t gRenderingSettings = BOTH_STRIPS;
  
 // TODO Currently only SoundReactive uses these palettes, more animations should use them
 // and blend in between for nice transitions
-CRGBPalette16 gPalettes[] = {RainbowColors_p,RainbowStripeColors_p, LavaColors_p, HeatColors_p, 
+CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_p, HeatColors_p, 
     CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p};
 uint8_t gCurrentPaletteIndex = 0;
 
+// Forward declarations of an array of cpt-city gradient palettes, and
+// a count of how many there are.  The actual color palette definitions
+// are at the bottom of this file.
+extern const TProgmemRGBGradientPalettePtr gGradientPalettes[];
+extern const uint8_t gGradientPaletteCount;
+
+
 uint8_t gHue = 0;
 
+
+// Animations
 
 uint8_t cylon(uint8_t strip, uint8_t num2) { 
   static int step = 0; 
