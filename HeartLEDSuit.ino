@@ -48,6 +48,7 @@ Button button(BUTTON_PIN, false);
 #include "Animations.h"
 // 10 seconds per color palette makes a good demo
 // 20-120 is better for deployment
+// Use 0 to disable palette changing on autoplay
 #define SECONDS_PER_PALETTE 10
 
 
@@ -242,8 +243,6 @@ void setup() {
   
   // FastLED power management set at 5V, 500mA.
   set_max_power_in_volts_and_milliamps(5, 500);               
-
-  
   
   // Button
   button.attachClick(onClick);
@@ -303,8 +302,38 @@ void loop() {
   };
 
   show_at_max_brightness_for_power();      
+
+  EVERY_N_MILLISECONDS(40) {
+    gHue++;  // slowly cycle the "base color" through the rainbow
+  }
+
+#if SECONDS_PER_PALETTE != 0 && 1 == 0
+  // blend the current palette to the next
+  EVERY_N_MILLISECONDS(40) {
+    nblendPaletteTowardPalette(currentPalette, targetPalette, 16);
+  }
   
-  gHue++;
+  // slowly change to a new palette
+  EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
+    Serial.println("New palette"); 
+    paletteIndex++;
+    if (paletteIndex >= paletteCount) paletteIndex = 0;
+    targetPalette = palettes[paletteIndex];
+  };
+
+  // slowly change to a new cpt-city gradient palette
+  EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
+    Serial.println("Switching cpt-city palette"); 
+    gCurrentPaletteNumber = addmod8(gCurrentPaletteNumber, 1, gGradientPaletteCount);
+    gTargetPalette = gGradientPalettes[ gCurrentPaletteNumber ];
+  }
+
+  // blend the current cpt-city gradient palette to the next
+  EVERY_N_MILLISECONDS(40) {
+    nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, 16);
+  }
+
+#endif   
     
   #ifdef DEBUG_ANIMATIONS
   EVERY_N_MILLISECONDS(500)  {Serial.print("FPS: ");Serial.println(FastLED.getFPS());}
