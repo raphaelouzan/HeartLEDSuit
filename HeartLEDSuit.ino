@@ -232,8 +232,8 @@ void setup() {
 
   showBatteryLevel(); 
   
-  // FastLED power management set at 5V, 500mA.
-  set_max_power_in_volts_and_milliamps(5, 500);               
+  // FastLED power management set at (default: 5V, 500mA)
+  set_max_power_in_volts_and_milliamps(5, 1000);               
   
   // Button
   button.attachClick(onClick);
