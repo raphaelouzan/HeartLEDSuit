@@ -80,12 +80,8 @@ AnimationPattern gAnimations[] = {
   
   {pride,    0,   0}, 
   
-  {discostrobe, 120, 4},
-  
   {blueFire, 100, 200}, 
   {multiFire, 100, 100},
-  
-
   
   {ripple,  60,  40},
 
