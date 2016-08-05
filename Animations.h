@@ -599,8 +599,11 @@ void showBeat(int timelength) {
   
 }
 
+// Could make the change by the music 
+#define DELAY_BETWEEN_HEARTBEATS   1600
 #define DELAY_BETWEEN_HEARTBEAT_PHASES 100
 
+// TODO should change palette overtime
 uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
   // Heartbeat is usually around 60-90 for adults
   // Systole - X (1/3 of the time)
@@ -611,7 +614,7 @@ uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
   static boolean beatInProgress = true;
   uint8_t wantedDelay = NO_DELAY;
 
-  EVERY_N_MILLISECONDS(700) {
+  EVERY_N_MILLISECONDS(DELAY_BETWEEN_HEARTBEATS) {
     beatInProgress = true;
   }
 
@@ -623,7 +626,7 @@ uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
       // Systole paint with red blood
       leds[step].r = random8();
       if (step == 40) {
-        wantedDelay = RANDOM_DELAY;
+        wantedDelay = DELAY_BETWEEN_HEARTBEAT_PHASES;
       }
     } else if (step <= 100) {
       // Diastole painted with blue blood
