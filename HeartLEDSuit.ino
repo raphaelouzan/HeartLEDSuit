@@ -38,7 +38,7 @@ struct CRGB leds2[STRIP2_SIZE];
  */ 
 #include "Button.h"
 #define BUTTON_PIN      12
-Button button(BUTTON_PIN, false);
+Button button(BUTTON_PIN, false); 
 
 /** 
  * Animations
@@ -72,6 +72,8 @@ Button button(BUTTON_PIN, false);
 AnimationPattern gAnimations[] = {
 
   {beatTriggered, 0, 0},
+
+  {breathing, 16, 64},
   
   {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
@@ -83,7 +85,7 @@ AnimationPattern gAnimations[] = {
   {blueFire, 100, 200}, 
   {multiFire, 100, 100},
   
-  {breathing, 16, 64},
+
   
   {ripple,  60,  40},
 
@@ -131,10 +133,14 @@ volatile uint8_t gCurrentPatternNumber = 0;
 
 void onClick() { 
   //Next animation
-  Serial.println("ONCLICK!");
-  
+  PRINT("ONCLICK!");
+
+  showBeat(600); 
+
   gCurrentPatternNumber = (gCurrentPatternNumber+1) % 
     (sizeof(gAnimations) / sizeof(gAnimations[0]));
+
+  PRINTX("Moving to animation:", gCurrentPatternNumber);
   
   // Make sure we're on the main animation sequence
   gSequence = gAnimations;
@@ -164,6 +170,7 @@ void onLongPressStart() {
 }
 
 void onLongPressEnd() { 
+  PRINT("Long press end");
   // Drop the bomb
   gCurrentPatternNumber = 1;
 }
@@ -213,9 +220,7 @@ void showBatteryLevel() {
  */ 
 void setup() {
   
-  delay(2000);                                                
-
-  DEBUG_START(57600)
+  delay(2000); DEBUG_START(57600)
 
   PRINT("PowerLEDSuit starting...");
 
@@ -237,6 +242,7 @@ void setup() {
   
   // Button
   button.attachClick(onClick);
+  button.setClickTicks(200); 
   button.attachDoubleClick(onDoubleClick); 
   button.attachLongPressStart(onLongPressStart);
   button.attachLongPressStop(onLongPressEnd);
@@ -288,8 +294,8 @@ void loop() {
     case SYNCED_DELAY: delayToSyncFrameRate(FRAMES_PER_SECOND); break;
     
     case STATIC_DELAY: delay_at_max_brightness_for_power(70); break;
-      
-    
+
+    default: delay_at_max_brightness_for_power(animDelay);
   };
 
   show_at_max_brightness_for_power();      
