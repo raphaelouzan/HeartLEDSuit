@@ -71,7 +71,7 @@ Button button(BUTTON_PIN, false);
  */
 AnimationPattern gAnimations[] = {
 
-  {beatTriggered, 0, 0},
+  {beatTriggered, 16, 100},
 
   {breathing, 16, 64},
   

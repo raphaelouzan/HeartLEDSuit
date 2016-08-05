@@ -550,7 +550,7 @@ uint8_t discostrobe(uint8_t zoomBPM = 120, uint8_t strobeCycleLength = 4) {
   return SYNCED_DELAY;
 }
 
-void fadeLEDs(int fadeVal) {
+void fadeAndTwinkleBlood(int fadeVal) {
   for (int i = 0; i < NUM_LEDS; i++) {
     //Fade every LED by the fadeVal amount
     leds[i].fadeToBlackBy(fadeVal);
@@ -566,10 +566,6 @@ void fadeLEDs(int fadeVal) {
       }
     }
   }
-}
-
-void fadeAndTwinkleBlood(int fadeVal) {
-  fadeLEDs(fadeVal);
 }
 
 // Watch out: this function calls "show/show_at_max_brightness" itself 
@@ -599,12 +595,10 @@ void showBeat(int timelength) {
   
 }
 
-// Could make the change by the music 
-#define DELAY_BETWEEN_HEARTBEATS   1600
-#define DELAY_BETWEEN_HEARTBEAT_PHASES 100
 
 // TODO should change palette overtime
-uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
+uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, default: 16 */, uint8_t delayBetweenPhases /*100*/) {
+  
   // Heartbeat is usually around 60-90 for adults
   // Systole - X (1/3 of the time)
   // Diastole - relaxation (2/3 of the time)
@@ -614,7 +608,8 @@ uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
   static boolean beatInProgress = true;
   uint8_t wantedDelay = NO_DELAY;
 
-  EVERY_N_MILLISECONDS(DELAY_BETWEEN_HEARTBEATS) {
+  // TODO Check that this works since it's using a macro
+  EVERY_N_MILLISECONDS(delayBetweenHeartbeats * 100) {
     beatInProgress = true;
   }
 
@@ -626,7 +621,7 @@ uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
       // Systole paint with red blood
       leds[step].r = random8();
       if (step == 40) {
-        wantedDelay = DELAY_BETWEEN_HEARTBEAT_PHASES;
+        wantedDelay = delayBetweenPhases;
       }
     } else if (step <= 100) {
       // Diastole painted with blue blood
@@ -634,7 +629,7 @@ uint8_t beatTriggered(uint8_t systoleLedCount, uint8_t diastoleLedCount) {
       if (step == 100) {
         // Finished heart beat
         beatInProgress = false;
-        wantedDelay = DELAY_BETWEEN_HEARTBEAT_PHASES;
+        wantedDelay = delayBetweenPhases;
         step = -1;
       }
     }
