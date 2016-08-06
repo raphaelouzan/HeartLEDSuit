@@ -26,9 +26,7 @@ DebugUtils.h - Simple debugging utilities.
      Serial.print(' ');      \
      Serial.print(str); 
      
-  #define PRINT(str) \
-    PRINT_NOLN(str) \ 
-    Serial.println("");
+  #define PRINT(str) PRINT_NOLN(str) Serial.println("");
   
   #define PRINTX(str, obj) \
      PRINT_NOLN(str) \
