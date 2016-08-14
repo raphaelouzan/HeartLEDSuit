@@ -10,7 +10,7 @@
 //#define DEBUG_ANIMATIONS
 #include "DebugUtils.h"
 
-
+#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 /** 
  * LEDS
  */   
@@ -43,13 +43,11 @@ Button button(BUTTON_PIN, false);
 /** 
  * Animations
  */ 
-#include "GradientPalettes.h"
 #include "Animations.h"
+//#include "FiboAnimations.h"
 // 10 seconds per color palette makes a good demo
 // 20-120 is better for deployment
-// Use 0 to disable palette changing on autoplay
 #define SECONDS_PER_PALETTE 10
-
 
 
 /* 
@@ -71,12 +69,43 @@ Button button(BUTTON_PIN, false);
  */
 AnimationPattern gAnimations[] = {
 
+  // excellent and warm, maybe should move a bit slower 
+  {wave, 0, 0}, 
+
+  // Pastel colors 
+  {verticalRainbow, 0, 0}, 
+
+  // Fully colored, subtle changes [use CPT]
+  {incrementalDrift, 0, 0},
+
+  // Very good pace [use CPT]
+  {radialPaletteShift, 0, 0},
+
+  {pulse, 0, 0}, 
+
+  {life, 0, 0}, 
+
+  {fire, 0, 0}, 
+
+  // not sure about this one yet 
+  {multiFire2, 50, 200},
+  
+  {water, 0, 0}, 
+
+  {blueFire, 100, 200}, 
+  
+  // [use CPT]
+  {colorWaves, 0, 0},
+  {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best 
+
+  
   {beatTriggered, 16, 100},
 
-  {breathing, 16, 64},
-  
   {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
+
+  
+  {breathing, 16, 64},
   
   {pride,    0,   0}, 
   
@@ -88,6 +117,7 @@ AnimationPattern gAnimations[] = {
   {sinelon,  7, 32},
   {sinelon,  7, 4},
   
+  {juggle2, 3, 5}, // new animation to try
   {juggle,   2, 4},
   {juggle,   3, 7},
   {juggle,   4, 8},
@@ -218,7 +248,7 @@ void setup() {
   
   delay(2000); DEBUG_START(57600)
 
-  PRINT("PowerLEDSuit starting...");
+  PRINT("HeartLEDSuit starting...");
 
   // LEDs
   FastLED.addLeds<NEOPIXEL, LED40_PIN>(leds, 40).setCorrection(TypicalLEDStrip);
@@ -243,7 +273,9 @@ void setup() {
   button.attachLongPressStart(onLongPressStart);
   button.attachLongPressStop(onLongPressEnd);
   //button.attachTripleClick(onTripleClick);
-  
+
+  // Remove
+  PRINTX("Gradient Palette count:", gGradientPaletteCount);
 } 
   
 static void delayToSyncFrameRate(uint8_t framesPerSecond) {
@@ -300,34 +332,33 @@ void loop() {
     gHue++;  // slowly cycle the "base color" through the rainbow
   }
 
-#if SECONDS_PER_PALETTE != 0 && 1 == 0
   // blend the current palette to the next
   EVERY_N_MILLISECONDS(40) {
+    
     nblendPaletteTowardPalette(currentPalette, targetPalette, 16);
+    nblendPaletteTowardPalette(gCurrentGradientPalette, gTargetGradientPalette, 16);
   }
   
   // slowly change to a new palette
   EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
-    Serial.println("New palette"); 
-    paletteIndex++;
-    if (paletteIndex >= paletteCount) paletteIndex = 0;
-    targetPalette = palettes[paletteIndex];
+
+    
+    //FastLed Palettes
+    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes)); 
+    targetPalette = gPalettes[gCurrentPaletteIndex];
+
+    PRINT("Change CTC Palette"); 
+    // dummy code
+    gTargetGradientPalette = gPalettes[gCurrentPaletteIndex];
+    
+    //CPC Gradient Palettes
+//    gGradientPaletteIndex = addmod8(gGradientPaletteIndex, 1, gGradientPaletteCount);
+//    gTargetGradientPalette = gGradientPalettes[gGradientPaletteIndex];
+
+    PRINTX("New gradient palette", gGradientPaletteIndex);
   };
 
-  // slowly change to a new cpt-city gradient palette
-  EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
-    Serial.println("Switching cpt-city palette"); 
-    gCurrentPaletteNumber = addmod8(gCurrentPaletteNumber, 1, gGradientPaletteCount);
-    gTargetPalette = gGradientPalettes[ gCurrentPaletteNumber ];
-  }
 
-  // blend the current cpt-city gradient palette to the next
-  EVERY_N_MILLISECONDS(40) {
-    nblendPaletteTowardPalette(gCurrentPalette, gTargetPalette, 16);
-  }
-
-#endif   
-    
   #ifdef DEBUG_ANIMATIONS
   EVERY_N_MILLISECONDS(500)  {Serial.print("FPS: ");Serial.println(FastLED.getFPS());}
   #endif

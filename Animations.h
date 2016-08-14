@@ -1,5 +1,41 @@
 #include <FastLed.h>
 
+/*
+ * Palette definitions 
+ */
+
+// FastLED Palettes 
+
+// TODO Currently only SoundReactive uses these palettes, more animations should use them
+// and blend in between for nice transitions
+CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_p, HeatColors_p,
+                             CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p
+                            };
+uint8_t gCurrentPaletteIndex = 0;
+
+CRGBPalette16 currentPalette(CRGB::Black);
+CRGBPalette16 targetPalette = gPalettes[gCurrentPaletteIndex];
+
+// CTC (Gradient) Palettes 
+uint8_t gGradientPaletteIndex = 0;
+
+extern const TProgmemRGBGradientPalettePtr gGradientPalettes[];
+extern const uint8_t gGradientPaletteCount;
+
+// Try to call the gradient palettes by name 
+
+CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
+CRGBPalette16 gTargetGradientPalette = targetPalette;
+
+#include "GradientPalettes.h" 
+
+
+uint8_t gHue = 0;
+
+/**
+ * Animations
+ */
+
 typedef uint8_t (*Animation)(uint8_t arg1, uint8_t arg2);
 typedef struct {
   Animation mPattern;
@@ -20,26 +56,11 @@ typedef enum delayType {
 
 uint8_t gRenderingSettings = BOTH_STRIPS;
 
-#define RIPPLE_FADE_RATE 255
 
-// TODO Currently only SoundReactive uses these palettes, more animations should use them
-// and blend in between for nice transitions
-CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_p, HeatColors_p,
-                             CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p
-                            };
-uint8_t gCurrentPaletteIndex = 0;
-
-// Forward declarations of an array of cpt-city gradient palettes, and
-// a count of how many there are.  The actual color palette definitions
-// are at the bottom of this file.
-extern const TProgmemRGBGradientPalettePtr gGradientPalettes[];
-extern const uint8_t gGradientPaletteCount;
+#include "FiboMatrix.h" 
+#include "FiboLife.h"
 
 
-uint8_t gHue = 0;
-
-
-// Animations
 
 uint8_t cylon(uint8_t strip, uint8_t num2) {
   static int step = 0;
@@ -149,6 +170,7 @@ int wrap(int step) {
 }
 
 // Ripple (inspired by @atuline)
+#define RIPPLE_FADE_RATE 255
 // Ripple effect with trailing dots (alternatively), color randomized for each ripple
 // TODO Ripples should be spaced out by some sinus function instead of a static delay to make it feel more organic
 uint8_t ripple(uint8_t rippleSize, uint8_t fadeToBlackRate) {
@@ -307,6 +329,10 @@ uint8_t multiFire(uint8_t cooling, uint8_t sparking) {
   const CRGBPalette16 pal = CRGBPalette16(CRGB::Black, darkcolor, lightcolor, CRGB::White);
 
   return fire(cooling, sparking, pal);
+}
+
+uint8_t multiFire2(uint8_t cooling, uint8_t sparking) { 
+  return fire(cooling, sparking, gCurrentGradientPalette);
 }
 
 // From Marks Kriegman's https://gist.github.com/kriegsman/964de772d64c502760e5
@@ -619,13 +645,18 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
 
     if (step <= 40) {
       // Systole paint with red blood
-      leds[step].r = random8();
+      //leds[step] = ColorFromPalette(gCurrentGradientPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
+      leds[step] = ColorFromPalette(currentPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
+      //leds[step].r = random8();
+      
       if (step == 40) {
         wantedDelay = delayBetweenPhases;
       }
     } else if (step <= 100) {
       // Diastole painted with blue blood
-      leds[step].b = random8(120);
+      leds[step] = ColorFromPalette(currentPalette, 180 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
+      //leds[step].b = random8(120);
+      
       if (step == 100) {
         // Finished heart beat
         beatInProgress = false;
@@ -646,4 +677,41 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
   return wantedDelay;
 }
 
+// new animation to try
+
+uint8_t juggle2(uint8_t a, uint8_t b)
+{
+  static uint8_t    numdots =   4; // Number of dots in use.
+  static uint8_t   faderate =   2; // How long should the trails be. Very low value = longer trails.
+  static uint8_t     hueinc =  255 / numdots - 1; // Incremental change in hue between each dot.
+  static uint8_t    thishue =   0; // Starting hue.
+  static uint8_t     curhue =   0; // The current hue
+  static uint8_t    thissat = 255; // Saturation of the colour.
+  static uint8_t thisbright = 255; // How bright should the LED/display be.
+  static uint8_t   basebeat =   5; // Higher = faster movement.
+
+  static uint8_t lastSecond =  99;  // Static variable, means it's only defined once. This is our 'debounce' variable.
+  uint8_t secondHand = (millis() / 1000) % 30; // IMPORTANT!!! Change '30' to a different value to change duration of the loop.
+
+  if (lastSecond != secondHand) { // Debounce to make sure we're not repeating an assignment.
+    lastSecond = secondHand;
+    switch (secondHand) {
+      case  0: numdots = 1; basebeat = 20; hueinc = 16; faderate = 2; thishue = 0; break; // You can change values here, one at a time , or altogether.
+      case 10: numdots = 4; basebeat = 10; hueinc = 16; faderate = 8; thishue = 128; break;
+      case 20: numdots = 8; basebeat =  3; hueinc =  0; faderate = 8; thishue = random8(); break; // Only gets called once, and not continuously for the next several seconds. Therefore, no rainbows.
+      case 30: break;
+    }
+  }
+
+  // Several colored dots, weaving in and out of sync with each other
+  curhue = thishue; // Reset the hue values.
+  fadeToBlackBy(leds, NUM_LEDS, faderate);
+  for ( int i = 0; i < numdots; i++) {
+    //beat16 is a FastLED 3.1 function
+    leds[beatsin16(basebeat + i + numdots, 0, NUM_LEDS)] += CHSV(gHue + curhue, thissat, thisbright);
+    curhue += hueinc;
+  }
+
+  return 8;
+}
 
