@@ -7,7 +7,6 @@
 #define USE_2ND_STRIP    0
 #define USE_SETTINGS     1
 #define DEBUG
-//#define DEBUG_ANIMATIONS
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -37,16 +36,15 @@ struct CRGB leds2[STRIP2_SIZE];
  * Button Switcher
  */ 
 #include "Button.h"
-#define BUTTON_PIN      12
+#define BUTTON_PIN      13
 Button button(BUTTON_PIN, false); 
 
 /** 
  * Animations
  */ 
 #include "Animations.h"
-//#include "FiboAnimations.h"
-// 10 seconds per color palette makes a good demo
-// 20-120 is better for deployment
+//#include "GradientPalettes.h"
+// 10 seconds per color palette makes a good demo, 20-120 is better for deployment
 #define SECONDS_PER_PALETTE 10
 
 
@@ -69,6 +67,8 @@ Button button(BUTTON_PIN, false);
  */
 AnimationPattern gAnimations[] = {
 
+  {beatTriggered, 20, 100},
+  
   // excellent and warm, maybe should move a bit slower 
   {wave, 0, 0}, 
 
@@ -97,9 +97,6 @@ AnimationPattern gAnimations[] = {
   // [use CPT]
   {colorWaves, 0, 0},
   {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best 
-
-  
-  {beatTriggered, 16, 100},
 
   {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
@@ -159,12 +156,11 @@ volatile uint8_t gCurrentPatternNumber = 0;
 
 void onClick() { 
   //Next animation
-  PRINT("ONCLICK!");
+  PRINT("onClick");
 
   showBeat(600); 
 
-  gCurrentPatternNumber = (gCurrentPatternNumber+1) % 
-    (sizeof(gAnimations) / sizeof(gAnimations[0]));
+  gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
 
   PRINTX("Moving to animation:", gCurrentPatternNumber);
   
@@ -176,13 +172,10 @@ void onDoubleClick() {
   //Reseting to first animation
   PRINT("Double click");
   
-  // Assumes first two animations are using palettes
   if (gCurrentPatternNumber == 0 || gCurrentPatternNumber == 1) { 
     // We're already at the first animation - spice things up 
-    gCurrentPaletteIndex = (gCurrentPaletteIndex + 1) 
-        % (sizeof(gPalettes) / sizeof(gPalettes[0]));
-    // TODO should use nblendPaletteTowardPalette(currentPalette, targetPalette, maxChanges);     
-        
+    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
+    targetPalette = gPalettes[gCurrentPaletteIndex];
   } else {
     gCurrentPatternNumber = 0; 
   }
@@ -244,6 +237,8 @@ void showBatteryLevel() {
 /**
  * Setup
  */ 
+
+ 
 void setup() {
   
   delay(2000); DEBUG_START(57600)
@@ -274,8 +269,6 @@ void setup() {
   button.attachLongPressStop(onLongPressEnd);
   //button.attachTripleClick(onTripleClick);
 
-  // Remove
-  PRINTX("Gradient Palette count:", gGradientPaletteCount);
 } 
   
 static void delayToSyncFrameRate(uint8_t framesPerSecond) {
@@ -357,14 +350,9 @@ void loop() {
 
     PRINTX("New gradient palette", gGradientPaletteIndex);
   };
-
-
-  #ifdef DEBUG_ANIMATIONS
-  EVERY_N_MILLISECONDS(500)  {Serial.print("FPS: ");Serial.println(FastLED.getFPS());}
-  #endif
   
   #ifdef DEBUG
-  EVERY_N_MILLISECONDS(3000) {PRINTX("BATTERY LEVEL: ", batteryLevel());}
+  EVERY_N_MILLISECONDS(3000) {Serial.print("FPS: ");Serial.print(FastLED.getFPS()); Serial.print(" ||  BATTERY LEVEL: "); Serial.println(batteryLevel()); }
   #endif
 } 
 

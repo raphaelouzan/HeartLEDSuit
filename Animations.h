@@ -1,13 +1,15 @@
 #include <FastLed.h>
 
+#if FASTLED_VERSION < 3001000
+  #error "Requires FastLED 3.1 or later; check github for latest code."
+#endif
+
 /*
  * Palette definitions 
  */
 
 // FastLED Palettes 
 
-// TODO Currently only SoundReactive uses these palettes, more animations should use them
-// and blend in between for nice transitions
 CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_p, HeatColors_p,
                              CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p
                             };
@@ -19,16 +21,12 @@ CRGBPalette16 targetPalette = gPalettes[gCurrentPaletteIndex];
 // CTC (Gradient) Palettes 
 uint8_t gGradientPaletteIndex = 0;
 
-extern const TProgmemRGBGradientPalettePtr gGradientPalettes[];
-extern const uint8_t gGradientPaletteCount;
+//#include "GradientPalettes.h" 
 
-// Try to call the gradient palettes by name 
 
 CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
-CRGBPalette16 gTargetGradientPalette = targetPalette;
 
-#include "GradientPalettes.h" 
-
+CRGBPalette16 gTargetGradientPalette(CRGB::Red);
 
 uint8_t gHue = 0;
 
@@ -56,10 +54,9 @@ typedef enum delayType {
 
 uint8_t gRenderingSettings = BOTH_STRIPS;
 
-
+// Fibonacci animations, adapted from https://github.com/evilgeniuslabs/fibonacci-v3d
 #include "FiboMatrix.h" 
 #include "FiboLife.h"
-
 
 
 uint8_t cylon(uint8_t strip, uint8_t num2) {
@@ -392,7 +389,7 @@ uint8_t aboutToDrop(uint8_t a, uint8_t b) {
 
   static uint8_t bpmAmount = 2;
 
-  sinelon(bpmAmount++, 0  );
+  sinelon(bpmAmount++, 0);
   bpmAmount %= 160;
 
   return NO_DELAY;
@@ -622,7 +619,6 @@ void showBeat(int timelength) {
 }
 
 
-// TODO should change palette overtime
 uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, default: 16 */, uint8_t delayBetweenPhases /*100*/) {
   
   // Heartbeat is usually around 60-90 for adults
@@ -644,18 +640,18 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
     step++;
 
     if (step <= 40) {
-      // Systole paint with red blood
+      // Systole paint with redish blood
       //leds[step] = ColorFromPalette(gCurrentGradientPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
       leds[step] = ColorFromPalette(currentPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
-      //leds[step].r = random8();
+      if (random8(2) % 2) leds[step].r = random8();
       
       if (step == 40) {
         wantedDelay = delayBetweenPhases;
       }
     } else if (step <= 100) {
-      // Diastole painted with blue blood
+      // Diastole painted with blueish blood
       leds[step] = ColorFromPalette(currentPalette, 180 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
-      //leds[step].b = random8(120);
+      if (random8(2) % 2) leds[step].b = random8(120);
       
       if (step == 100) {
         // Finished heart beat
