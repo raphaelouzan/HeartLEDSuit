@@ -69,23 +69,24 @@ AnimationPattern gAnimations[] = {
 
   {beatTriggered, 20, 100},
   
-  // excellent and warm, maybe should move a bit slower 
+  // breathing full colors, rapid changes of color tones. #warm #powerful 
   {wave, 0, 0}, 
+  
+  // [use CPT]
+  {colorWaves, 0, 0},
+  {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best 
 
-  // Pastel colors 
-  {verticalRainbow, 0, 0}, 
+  // Slowercolor changes, create powerful color effects #mesmerizing [use CPT]
+  {radialPaletteShift, 0, 0},
 
+  {fire, 0, 0}, 
+  
   // Fully colored, subtle changes [use CPT]
   {incrementalDrift, 0, 0},
-
-  // Very good pace [use CPT]
-  {radialPaletteShift, 0, 0},
 
   {pulse, 0, 0}, 
 
   {life, 0, 0}, 
-
-  {fire, 0, 0}, 
 
   // not sure about this one yet 
   {multiFire2, 50, 200},
@@ -94,20 +95,12 @@ AnimationPattern gAnimations[] = {
 
   {blueFire, 100, 200}, 
   
-  // [use CPT]
-  {colorWaves, 0, 0},
-  {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best 
-
   {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
 
-  
   {breathing, 16, 64},
   
   {pride,    0,   0}, 
-  
-  {blueFire, 100, 200}, 
-  {multiFire, 100, 100},
   
   {ripple,  60,  40},
 
@@ -118,6 +111,9 @@ AnimationPattern gAnimations[] = {
   {juggle,   2, 4},
   {juggle,   3, 7},
   {juggle,   4, 8},
+
+  // Pastel colors 
+  {verticalRainbow, 0, 0}, 
   
   // TODO applause became way too fast when 2 leds on same pin
   {applause, HUE_BLUE, HUE_PURPLE},
@@ -158,7 +154,7 @@ void onClick() {
   //Next animation
   PRINT("onClick");
 
-  showBeat(600); 
+  showBeat(250); 
 
   gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
 

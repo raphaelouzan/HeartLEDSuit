@@ -593,29 +593,35 @@ void fadeAndTwinkleBlood(int fadeVal) {
 
 // Watch out: this function calls "show/show_at_max_brightness" itself 
 // to be an independent, blocking animation
-void showBeat(int timelength) {
-  
-  int timeBetweenPhases = timelength / 2;
-  int timeForBloodCells = (timelength - timeBetweenPhases) / 100;
+void showBeat(int animLength) {
 
-  for (int i = 0; i < 100; i++) {
-    if (i <= 40) {
-      leds[i].r = random8();
-      if (i == 40) {
-        // End of first phase
-        show_at_max_brightness_for_power();
-        delay_at_max_brightness_for_power(timeBetweenPhases);
-      }
-    } else {
-      leds[i].b = random8(120);
-    }
-    if (i % 3 == 0) {
+  const uint8_t numLedsForFirstPhase = 40; 
+  int timeForBloodCells = animLength / NUM_LEDS;
+  
+  fadeAndTwinkleBlood(100);
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+
+    if (i % 2 == 0) {
       fadeAndTwinkleBlood(5);
     }
-    show_at_max_brightness_for_power();
-    delay_at_max_brightness_for_power(timeForBloodCells);
+    
+    // First phase
+    if (i <= numLedsForFirstPhase) {
+      leds[i].r = random8();
+      if (i == numLedsForFirstPhase) {
+        // End of first phase, show it at once
+        show_at_max_brightness_for_power();
+        delay_at_max_brightness_for_power(timeForBloodCells * numLedsForFirstPhase);
+      }
+    } else {
+      // Second phase (show cell by cell)
+      leds[i].b = random8(120);
+      show_at_max_brightness_for_power();
+      delay_at_max_brightness_for_power(timeForBloodCells);
+    }
+     
   }
-  
 }
 
 
