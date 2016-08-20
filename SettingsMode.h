@@ -8,7 +8,7 @@ class SettingsMode
 {
 public:
 
-  SettingsMode(Button* button) : 
+  SettingsMode(XButton* button) : 
   _button(button) {
   }
 
@@ -101,7 +101,7 @@ protected:
 
 public:
 
-  Button* _button;
+  XButton* _button;
 
   callbackFunction _previousClickHandler; 
   callbackFunction _previousLongPressStopHandler;

@@ -4,7 +4,7 @@
 /** 
  * Variable Components
  */
-#define USE_2ND_STRIP    0
+#define USE_2ND_STRIP    1
 #define USE_SETTINGS     1
 #define DEBUG
 #include "DebugUtils.h"
@@ -20,9 +20,10 @@
 struct CRGB leds[STRIP_SIZE];  
 
 #if USE_2ND_STRIP
-#define STRIP2_SIZE     40
-#define LED2_PIN        6
-struct CRGB leds2[STRIP2_SIZE];  
+#define STRIP2_SIZE     29
+#define LED2_PIN        12
+#define LED3_PIN        5
+struct CRGB leds2[STRIP2_SIZE*2];  
 #endif
 
 // Number of LEDs for the front side of the suit (will be mirrored on what's left of the strip in the back)
@@ -36,8 +37,11 @@ struct CRGB leds2[STRIP2_SIZE];
  * Button Switcher
  */ 
 #include "Button.h"
-#define BUTTON_PIN      13
-Button button(BUTTON_PIN, false); 
+#include "XButton.h"
+#define HEART_BUTTON_PIN      13v
+#define MEMBRANE_BUTTON_PIN   A1
+Button button(HEART_BUTTON_PIN, false); 
+XButton mButton(MEMBRANE_BUTTON_PIN, true);
 
 /** 
  * Animations
@@ -45,7 +49,9 @@ Button button(BUTTON_PIN, false);
 #include "Animations.h"
 //#include "GradientPalettes.h"
 // 10 seconds per color palette makes a good demo, 20-120 is better for deployment
-#define SECONDS_PER_PALETTE 10
+#define SECONDS_PER_PALETTE    10
+#define AUTOPLAY_ENABLED       1
+#define SECONDS_PER_ANIMATION  300
 
 
 /* 
@@ -66,7 +72,10 @@ Button button(BUTTON_PIN, false);
  * Sequencing
  */
 AnimationPattern gAnimations[] = {
-
+  
+  {soundAnimate, 0, 0},
+  {soundAnimate, 1, 0},
+  
   {beatTriggered, 20, 100},
   
   // breathing full colors, rapid changes of color tones. #warm #powerful 
@@ -94,44 +103,31 @@ AnimationPattern gAnimations[] = {
   {water, 0, 0}, 
 
   {blueFire, 100, 200}, 
-  
-  {soundAnimate, 0, 0},
-  {soundAnimate, 1, 0},
 
+  // TODO should add fadeAndTwinkleBlood
   {breathing, 16, 64},
   
   {pride,    0,   0}, 
-  
+
+  // way too slow
   {ripple,  60,  40},
 
+/* good for strips not for heart 
   {sinelon,  7, 32},
   {sinelon,  7, 4},
+
+  */
   
-  {juggle2, 3, 5}, // new animation to try
-  {juggle,   2, 4},
-  {juggle,   3, 7},
   {juggle,   4, 8},
 
   // Pastel colors 
   {verticalRainbow, 0, 0}, 
   
-  // TODO applause became way too fast when 2 leds on same pin
-  {applause, HUE_BLUE, HUE_PURPLE},
   {applause, HUE_BLUE, HUE_RED},
-  
-  // TODO Should probably remove or move to lower energy
-  {twinkle,  15, 100},
-  
-  // TODO Slow it down, like applause
-  {twinkle,  50, 224},
   
   {confetti, 20, 10},
   {confetti, 16,  3}, 
 
-  {pride,    0,   0}, 
-  
-  {bpm,      15,  2},
-  {bpm,      62,  3},
   {bpm,      125, 7}
 };
 
@@ -167,11 +163,13 @@ void onClick() {
 void onDoubleClick() { 
   //Reseting to first animation
   PRINT("Double click");
+
+  showBeat(100); 
   
   if (gCurrentPatternNumber == 0 || gCurrentPatternNumber == 1) { 
     // We're already at the first animation - spice things up 
     gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
-    targetPalette = gPalettes[gCurrentPaletteIndex];
+    currentPalette = gPalettes[gCurrentPaletteIndex]; 
   } else {
     gCurrentPatternNumber = 0; 
   }
@@ -192,7 +190,7 @@ void onLongPressEnd() {
 
 void onTripleClick() { 
 #if USE_SETTINGS  
-  SettingsMode settings = SettingsMode(&button);
+  SettingsMode settings = SettingsMode(&mButton);
   settings.showSettings();
 
   uint8_t brightness = settings.getUserBrightness();
@@ -247,7 +245,9 @@ void setup() {
   
   
 #if USE_2ND_STRIP
+  // Should address both sides separately and use the different sides 
   FastLED.addLeds<NEOPIXEL, LED2_PIN>(leds2, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
+  FastLED.addLeds<NEOPIXEL, LED3_PIN>(leds2, STRIP2_SIZE, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
 #endif
 
   FastLED.setBrightness(DEFAULT_BRIGHTNESS);
@@ -259,11 +259,15 @@ void setup() {
   
   // Button
   button.attachClick(onClick);
-  button.setClickTicks(200); 
-  button.attachDoubleClick(onDoubleClick); 
+  button.setClickTicks(100); 
   button.attachLongPressStart(onLongPressStart);
   button.attachLongPressStop(onLongPressEnd);
-  //button.attachTripleClick(onTripleClick);
+
+  mButton.attachClick(onClick); 
+  mButton.attachDoubleClick(onDoubleClick); 
+  mButton.attachLongPressStart(onLongPressStart); 
+  mButton.attachLongPressStop(onLongPressEnd); 
+  mButton.attachTripleClick(onTripleClick); 
 
 } 
   
@@ -282,10 +286,57 @@ static void delayToSyncFrameRate(uint8_t framesPerSecond) {
 /** 
  * Loop and LED management
  */ 
+
+void mirrorLedsToSecondaryStrips() { 
+  
+  for (int i = 0; i < STRIP_SIZE && i < STRIP2_SIZE; i++) { 
+    if (i < NUM_LEDS) { 
+      
+#if USE_2ND_STRIP
+        // To reverse
+        //leds2[STRIP2_SIZE-(i+1)] = leds[i]; 
+
+        // Try making one strip more red and the 2nd one more blue 
+        leds2[i] = leds[i]; 
+
+        // make it red 
+        
+        //leds2[STRIP2_SIZE*2-(i+1)] = leds[i]; 
+        leds2[STRIP2_SIZE+i] = leds[i]; 
+         
+//      if (gRenderingSettings != LEFT_STRIP_ONLY) {
+//        leds2[i] = leds[i];
+//        
+//        if (gRenderingSettings == RIGHT_STRIP_ONLY) { 
+//          leds[i] = CRGB::Black;
+//        }
+//      
+//      } else { 
+//        leds2[i] = CRGB::Black;
+//      }
+#endif 
+
+//      if (i < STRIP_SIZE - NUM_LEDS) { 
+//        // Copy to the front side
+//        leds[STRIP_SIZE-i-1] = leds[i];
+//        // Dim the back by max 50%
+//        leds[i].fadeLightBy(128*(1/i+1));
+//      }
+   }
+
+  }
+
+  // Go back to default
+  //gRenderingSettings = BOTH_STRIPS;
+  
+}
+
+ 
 void loop() {
   random16_add_entropy(random8());
   
   button.tick();
+  mButton.tick2();
   
   uint8_t arg1 = gSequence[gCurrentPatternNumber].mArg1;
   uint8_t arg2 = gSequence[gCurrentPatternNumber].mArg2;
@@ -293,7 +344,8 @@ void loop() {
   
   uint8_t animDelay = animate(arg1, arg2);
 
- // mirrorLeds();
+  // Should it be reversed to pump into the heart? 
+  mirrorLedsToSecondaryStrips();
   
   #if REVERSE_LEDS
     reverseLeds();
@@ -317,20 +369,23 @@ void loop() {
 
   show_at_max_brightness_for_power();      
 
-  EVERY_N_MILLISECONDS(40) {
-    gHue++;  // slowly cycle the "base color" through the rainbow
+  // Autoplay (5 mins)
+#if AUTOPLAY_ENABLED
+  EVERY_N_SECONDS(SECONDS_PER_ANIMATION) { 
+    gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
+    gSequence = gAnimations;
   }
-
+#endif   
+  
   // blend the current palette to the next
   EVERY_N_MILLISECONDS(40) {
-    
+    gHue++;  // slowly cycle the "base color" through the rainbow
     nblendPaletteTowardPalette(currentPalette, targetPalette, 16);
     nblendPaletteTowardPalette(gCurrentGradientPalette, gTargetGradientPalette, 16);
   }
   
   // slowly change to a new palette
   EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
-
     
     //FastLed Palettes
     gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes)); 
@@ -343,8 +398,6 @@ void loop() {
     //CPC Gradient Palettes
 //    gGradientPaletteIndex = addmod8(gGradientPaletteIndex, 1, gGradientPaletteCount);
 //    gTargetGradientPalette = gGradientPalettes[gGradientPaletteIndex];
-
-    PRINTX("New gradient palette", gGradientPaletteIndex);
   };
   
   #ifdef DEBUG
@@ -353,39 +406,5 @@ void loop() {
 } 
 
 
-void mirrorLeds() { 
-  
-  PRINTX("Rendering:", gRenderingSettings);
-  
-  for (int i = 0; i < STRIP_SIZE; i++) { 
-    if (i < NUM_LEDS) { 
-      
-#if USE_2ND_STRIP
-      if (gRenderingSettings != LEFT_STRIP_ONLY) {
-        leds2[i] = leds[i];
-        
-        if (gRenderingSettings == RIGHT_STRIP_ONLY) { 
-          leds[i] = CRGB::Black;
-        }
-      
-      } else { 
-        leds2[i] = CRGB::Black;
-      }
-#endif 
-
-      if (i < STRIP_SIZE - NUM_LEDS) { 
-        // Copy to the front side
-        leds[STRIP_SIZE-i-1] = leds[i];
-        // Dim the back by max 50%
-        leds[i].fadeLightBy(128*(1/i+1));
-      }
-   }
-
-  }
-
-  // Go back to default
-  //gRenderingSettings = BOTH_STRIPS;
-  
-}
 
 

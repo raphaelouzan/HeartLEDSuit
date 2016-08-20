@@ -1,5 +1,15 @@
 // From ColorWavesWithPalettes by Mark Kriegsman: https://gist.github.com/kriegsman/8281905786e8b2632aeb
 
+#undef DEFINE_GRADIENT_PALETTE
+
+
+#define DEFINE_GRADIENT_PALETTE(X) \
+  uint8_t X[]  =
+
+typedef uint8_t Palette_byte ;
+typedef Palette_byte *Palette_bytes;
+
+
 // Gradient Color Palette definitions for 33 different cpt-city color palettes.
 //    956 bytes of PROGMEM for all of the palettes together,
 //   +618 bytes of PROGMEM for gradient palette code (AVR).
@@ -476,7 +486,7 @@ DEFINE_GRADIENT_PALETTE( Blue_Cyan_Yellow_gp ) {
 //
 // This list of color palettes acts as a "playlist"; you can
 // add or delete, or re-arrange as you wish.
-const TDynamicRGBGradientPalettePtr gGradientPalettes[] = {
+CRGBPalette16 gGradientPalettes[] = {
   Sunset_Real_gp,
   es_rivendell_15_gp,
   es_ocean_breeze_036_gp,
@@ -514,5 +524,5 @@ const TDynamicRGBGradientPalettePtr gGradientPalettes[] = {
 
 // Count of how many cpt-city gradients are defined:
 const uint8_t gGradientPaletteCount =
-  sizeof( gGradientPalettes) / sizeof( TProgmemRGBGradientPalettePtr );
+  sizeof(gGradientPalettes) / sizeof(Palette_bytes);
 

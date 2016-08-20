@@ -14,19 +14,18 @@ CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_
                              CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p
                             };
 uint8_t gCurrentPaletteIndex = 0;
+uint8_t gGradientPaletteIndex = 0;
 
 CRGBPalette16 currentPalette(CRGB::Black);
 CRGBPalette16 targetPalette = gPalettes[gCurrentPaletteIndex];
 
-// CTC (Gradient) Palettes 
-uint8_t gGradientPaletteIndex = 0;
+CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
+CRGBPalette16 gTargetGradientPalette = gPalettes[gCurrentPaletteIndex];
+
 
 //#include "GradientPalettes.h" 
 
 
-CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
-
-CRGBPalette16 gTargetGradientPalette(CRGB::Red);
 
 uint8_t gHue = 0;
 
@@ -214,7 +213,7 @@ uint8_t ripple(uint8_t rippleSize, uint8_t fadeToBlackRate) {
     step = -1;
   }
 
-  return STATIC_DELAY;
+  return SYNCED_DELAY;
 }
 
 uint8_t beatCubic8x(accum88 beats_per_minute, uint8_t lowest = 0, uint8_t highest = 255, int type = 0, int offset = 0)
