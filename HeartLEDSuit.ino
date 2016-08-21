@@ -38,7 +38,7 @@ struct CRGB leds2[STRIP2_SIZE*2];
  */ 
 #include "Button.h"
 #include "XButton.h"
-#define HEART_BUTTON_PIN      13v
+#define HEART_BUTTON_PIN      13
 #define MEMBRANE_BUTTON_PIN   A1
 Button button(HEART_BUTTON_PIN, false); 
 XButton mButton(MEMBRANE_BUTTON_PIN, true);
@@ -73,8 +73,9 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
  */
 AnimationPattern gAnimations[] = {
   
-  {soundAnimate, 0, 0},
   {soundAnimate, 1, 0},
+
+  {soundAnimate, 0, 0},
   
   {beatTriggered, 20, 100},
   
@@ -148,16 +149,18 @@ volatile uint8_t gCurrentPatternNumber = 0;
 
 void onClick() { 
   //Next animation
-  PRINT("onClick");
 
   showBeat(250); 
 
-  gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
-
-  PRINTX("Moving to animation:", gCurrentPatternNumber);
+  // we're on a different animation sequence
+  if (gSequence == gAnimations) { 
+    gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
+  } else { 
+    gCurrentPatternNumber = 0; 
+    gSequence = gAnimations;
+  }
   
-  // Make sure we're on the main animation sequence
-  gSequence = gAnimations;
+  PRINTX("Click - Moving to animation:", gCurrentPatternNumber);
 }   
 
 void onDoubleClick() { 
@@ -303,6 +306,13 @@ void mirrorLedsToSecondaryStrips() {
         
         //leds2[STRIP2_SIZE*2-(i+1)] = leds[i]; 
         leds2[STRIP2_SIZE+i] = leds[i]; 
+
+        if (leds[2].r > 20 && random8() % 4) 
+          leds[i].r = max(leds[i].r+i, 255); 
+        else if (leds2[STRIP2_SIZE+i].b && random8() % 4) { 
+          leds2[STRIP2_SIZE+1].b = max(leds[i].r+i, 255); 
+        }
+        
          
 //      if (gRenderingSettings != LEFT_STRIP_ONLY) {
 //        leds2[i] = leds[i];
