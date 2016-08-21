@@ -1,51 +1,51 @@
-#include <FastLED.h>                                          
+#include <FastLED.h>
 #include <Wire.h>
 
-/** 
- * Variable Components
- */
+/**
+   Variable Components
+*/
 #define USE_2ND_STRIP    1
 #define USE_SETTINGS     1
 #define DEBUG
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-/** 
- * LEDS
- */   
+/**
+   LEDS
+*/
 // Size of the strip, including both front and back of the strip
 #define STRIP_SIZE      100
 #define LED40_PIN       10
 #define LED60_PIN        6
-struct CRGB leds[STRIP_SIZE];  
+struct CRGB leds[STRIP_SIZE];
 
 #if USE_2ND_STRIP
-#define STRIP2_SIZE     29
+#define STRIP2_SIZE     29   // must be shorter than STRIP_SIZE
 #define LED2_PIN        12
 #define LED3_PIN        5
-struct CRGB leds2[STRIP2_SIZE*2];  
+struct CRGB leds2[STRIP2_SIZE * 2];
 #endif
 
-// Number of LEDs for the front side of the suit (will be mirrored on what's left of the strip in the back)
-#define NUM_LEDS        100                                   
+// Number of LEDs for the front side of the suit (will be mirrored on what's left of the strip in the back if reverse led is on)
+#define NUM_LEDS        100
 #define REVERSE_LEDS    0
-      
-#define DEFAULT_BRIGHTNESS 200                           
+
+#define DEFAULT_BRIGHTNESS 200
 #define FRAMES_PER_SECOND  100
-                           
-/** 
- * Button Switcher
- */ 
+
+/**
+   Button Switcher
+*/
 #include "Button.h"
 #include "XButton.h"
 #define HEART_BUTTON_PIN      13
 #define MEMBRANE_BUTTON_PIN   A1
-Button button(HEART_BUTTON_PIN, false); 
+Button button(HEART_BUTTON_PIN, false);
 XButton mButton(MEMBRANE_BUTTON_PIN, true);
 
-/** 
- * Animations
- */ 
+/**
+   Animations
+*/
 #include "Animations.h"
 //#include "GradientPalettes.h"
 // 10 seconds per color palette makes a good demo, 20-120 is better for deployment
@@ -54,80 +54,80 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
 #define SECONDS_PER_ANIMATION  300
 
 
-/* 
- * Settings UI
- */
+/*
+   Settings UI
+*/
 #if USE_SETTINGS
 #include "SettingsMode.h"
 #endif
 
 /**
- * Microphone
- */
+   Microphone
+*/
 #define MIC_PIN A4
 #include "SoundReactive.h"
-  
+
 
 /**
- * Sequencing
- */
+   Sequencing
+*/
 AnimationPattern gAnimations[] = {
-  
+
   {soundAnimate, 1, 0},
 
   {soundAnimate, 0, 0},
-  
+
   {beatTriggered, 20, 100},
-  
-  // breathing full colors, rapid changes of color tones. #warm #powerful 
-  {wave, 0, 0}, 
-  
+
+  // breathing full colors, rapid changes of color tones. #warm #powerful
+  {wave, 0, 0},
+
   // [use CPT]
   {colorWaves, 0, 0},
-  {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best 
+  {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best
 
   // Slowercolor changes, create powerful color effects #mesmerizing [use CPT]
   {radialPaletteShift, 0, 0},
 
-  {fire, 0, 0}, 
-  
+  {fire, 0, 0},
+
   // Fully colored, subtle changes [use CPT]
   {incrementalDrift, 0, 0},
 
-  {pulse, 0, 0}, 
+  {pulse, 0, 0},
 
-  {life, 0, 0}, 
+  {life, 0, 0},
 
-  // not sure about this one yet 
+  // not sure about this one yet
   {multiFire2, 50, 200},
-  
-  {water, 0, 0}, 
 
-  {blueFire, 100, 200}, 
+  {water, 0, 0},
+
+  {blueFire, 100, 200},
 
   // TODO should add fadeAndTwinkleBlood
   {breathing, 16, 64},
-  
-  {pride,    0,   0}, 
+
+  {pride,    0,   0},
 
   // way too slow
   {ripple,  60,  40},
 
-/* good for strips not for heart 
-  {sinelon,  7, 32},
-  {sinelon,  7, 4},
+  /* good for strips not for heart
+    {sinelon,  7, 32},
+    {sinelon,  7, 4},
 
   */
-  
+
   {juggle,   4, 8},
 
-  // Pastel colors 
-  {verticalRainbow, 0, 0}, 
-  
+  // Pastel colors
+  {verticalRainbow, 0, 0},
+
   {applause, HUE_BLUE, HUE_RED},
-  
+
   {confetti, 20, 10},
-  {confetti, 16,  3}, 
+  {confetti, 16,  3},
 
   {bpm,      125, 7}
 };
@@ -138,109 +138,109 @@ AnimationPattern gDropAnimations[] = {
 };
 
 // Default sequence to main animations
-volatile AnimationPattern* gSequence = gAnimations; 
+volatile AnimationPattern* gSequence = gAnimations;
 // Index number of which pattern is current
-volatile uint8_t gCurrentPatternNumber = 0; 
+volatile uint8_t gCurrentPatternNumber = 0;
 
 /**
- * Event Handlers
- */
+   Event Handlers
+*/
 
-void onClickFromMembrane() { 
+void onClickFromMembrane() {
   PRINT("Click from membrane:");
-  onClick(); 
+  onClick();
 }
-void onClick() { 
+void onClick() {
   //Next animation
 
-  showBeat(250); 
+  showBeat(250);
 
   // we're on a different animation sequence
-  if (gSequence == gAnimations) { 
+  if (gSequence == gAnimations) {
     gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
-  } else { 
-    gCurrentPatternNumber = 0; 
+  } else {
+    gCurrentPatternNumber = 0;
     gSequence = gAnimations;
   }
-  
-  PRINTX("Click - Moving to animation:", gCurrentPatternNumber);
-}   
 
-void onDoubleClick() { 
+  PRINTX("Click - Moving to animation:", gCurrentPatternNumber);
+}
+
+void onDoubleClick() {
   //Reseting to first animation
   PRINT("Double click");
 
-  showBeat(100); 
-  
-  if (gCurrentPatternNumber == 0 || gCurrentPatternNumber == 1) { 
-    // We're already at the first animation - spice things up 
+  showBeat(100);
+
+  if (gCurrentPatternNumber == 0 || gCurrentPatternNumber == 1) {
+    // We're already at the first animation - spice things up
     gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
-    currentPalette = gPalettes[gCurrentPaletteIndex]; 
+    currentPalette = gPalettes[gCurrentPaletteIndex];
   } else {
-    gCurrentPatternNumber = 0; 
+    gCurrentPatternNumber = 0;
   }
 }
 
-void onLongPressStart() { 
+void onLongPressStart() {
   PRINT("Long press");
-  
+
   gSequence = gDropAnimations;
   gCurrentPatternNumber = 0;
 }
 
-void onLongPressEnd() { 
+void onLongPressEnd() {
   PRINT("Long press end");
   // Drop the bomb
   gCurrentPatternNumber = 1;
 }
 
-void onTripleClick() { 
-#if USE_SETTINGS  
+void onTripleClick() {
+#if USE_SETTINGS
   SettingsMode settings = SettingsMode(&mButton);
   settings.showSettings();
 
   uint8_t brightness = settings.getUserBrightness();
-  FastLED.setBrightness(brightness); 
-#endif  
+  FastLED.setBrightness(brightness);
+#endif
 }
 
-// Showing Battery level 
+// Showing Battery level
 
 #define BATT_MIN_MV 3350 // Some headroom over battery cutoff near 2.9V
 #define BATT_MAX_MV 4200 // And little below fresh-charged battery near 4.1V
 
-void showBatteryLevel() { 
+void showBatteryLevel() {
 
-  float mV = batteryLevel() * 1000; 
-  PRINTX("Battery level:", mV); 
-  
-   uint8_t  lvl = (mV >= BATT_MAX_MV) ? NUM_LEDS : // Full (or nearly)
+  float mV = batteryLevel() * 1000;
+  PRINTX("Battery level:", mV);
+
+  uint8_t  lvl = (mV >= BATT_MAX_MV) ? NUM_LEDS : // Full (or nearly)
                  (mV <= BATT_MIN_MV) ?        1 : // Drained
                  1 + ((mV - BATT_MIN_MV) * NUM_LEDS + (NUM_LEDS / 2)) /
                  (BATT_MAX_MV - BATT_MIN_MV + 1); // # LEDs lit (1-NUM_LEDS)
 
-  PRINTX("Lvl", lvl); 
-  
-  for(uint8_t i=0; i<lvl; i++) {                  // Each LED to batt level
-  
+  PRINTX("Lvl", lvl);
+
+  for (uint8_t i = 0; i < lvl; i++) {             // Each LED to batt level
+
     uint8_t g = (i * 5 + 2) / NUM_LEDS;           // Red to green
-    
-    leds[i].r = 4-g; 
-    leds[i].g = g; 
-    leds[i].b = 0; 
+
+    leds[i].r = 4 - g;
+    leds[i].g = g;
+    leds[i].b = 0;
     FastLED.setBrightness(255);
-    FastLED.show(); 
-    delay(500/ NUM_LEDS);
+    FastLED.show();
+    delay(500 / NUM_LEDS);
   }
-  delay(1500); 
+  delay(1500);
 }
 /**
- * Setup
- */ 
+   Setup
+*/
 
- 
+
 void setup() {
-  
+
   delay(2000); DEBUG_START(57600)
 
   PRINT("HeartLEDSuit starting...");
@@ -248,174 +248,205 @@ void setup() {
   // LEDs
   FastLED.addLeds<NEOPIXEL, LED40_PIN>(leds, 40).setCorrection(TypicalLEDStrip);
   FastLED.addLeds<NEOPIXEL, LED60_PIN>(leds, 40, 60).setCorrection(TypicalLEDStrip);
-  
-  
+
+
 #if USE_2ND_STRIP
-  // Should address both sides separately and use the different sides 
+  // Should address both sides separately and use the different sides
   FastLED.addLeds<NEOPIXEL, LED2_PIN>(leds2, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
   FastLED.addLeds<NEOPIXEL, LED3_PIN>(leds2, STRIP2_SIZE, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
 #endif
 
   FastLED.setBrightness(DEFAULT_BRIGHTNESS);
 
-  showBatteryLevel(); 
-  
+  showBatteryLevel();
+
   // FastLED power management set at (default: 5V, 500mA)
-  set_max_power_in_volts_and_milliamps(5, 1000);               
-  
+  set_max_power_in_volts_and_milliamps(5, 1000);
+
   // Button
   button.attachClick(onClick);
-  button.attachDoubleClick(onDoubleClick); 
-  button.setClickTicks(100); 
+  button.attachDoubleClick(onDoubleClick);
+  button.attachLongPressStart(onLongPressStart);
+  button.attachLongPressStop(onLongPressEnd);
+  button.setClickTicks(100);
 
-  mButton.attachClick(onClickFromMembrane); 
-  mButton.attachDoubleClick(onDoubleClick); 
-  mButton.attachLongPressStart(onLongPressStart); 
-  mButton.attachLongPressStop(onLongPressEnd); 
-  mButton.attachTripleClick(onTripleClick); 
+  mButton.attachClick(onClickFromMembrane);
+  mButton.attachDoubleClick(onDoubleClick);
+  mButton.attachLongPressStart(onLongPressStart);
+  mButton.attachLongPressStop(onLongPressEnd);
+  mButton.attachTripleClick(onTripleClick);
+  mButton.setClickTicks(600);
 
-} 
-  
+}
+
 static void delayToSyncFrameRate(uint8_t framesPerSecond) {
   static uint32_t msprev = 0;
   uint32_t mscur = millis();
   uint16_t msdelta = mscur - msprev;
   uint16_t mstargetdelta = 1000 / framesPerSecond;
-  if(msdelta < mstargetdelta) {
+  if (msdelta < mstargetdelta) {
     delay_at_max_brightness_for_power(mstargetdelta - msdelta);
   }
   msprev = mscur;
 }
 
 
-/** 
- * Loop and LED management
- */ 
+/**
+   Loop and LED management
+*/
 
-void mirrorLedsToSecondaryStrips() { 
-  
-  for (int i = 0; i < STRIP_SIZE && i < STRIP2_SIZE; i++) { 
-    if (i < NUM_LEDS) { 
-      
+#define FIRST_2_RINGS_NUM_LEDS  40
+#define FADING_RATE 5
+void mirrorLedsToSecondaryStrips() {
+
+  // Assumes STRIP2_SIZE is shorter than NUM_LEDS and STRIP_SIZE 
+  for (int left = 0, right = STRIP2_SIZE; left < STRIP2_SIZE; left++, right++) {
+
 #if USE_2ND_STRIP
-        // To reverse
-        //leds2[STRIP2_SIZE-(i+1)] = leds[i]; 
 
-        // Try making one strip more red and the 2nd one more blue 
-        leds2[i] = leds[i]; 
 
-        // make it red 
-        
-        //leds2[STRIP2_SIZE*2-(i+1)] = leds[i]; 
-        leds2[STRIP2_SIZE+i] = leds[i]; 
+    // Copy one for one for the left strip
+    leds2[left] = leds[left];
+    // Copy later in the ring for the right strip
+    leds2[right] = leds[FIRST_2_RINGS_NUM_LEDS + left];
 
-        if (leds[2].r > 20 && random8() % 4) 
-          leds[i].r = max(leds[i].r+i, 255); 
-        else if (leds2[STRIP2_SIZE+i].b && random8() % 4) { 
-          leds2[STRIP2_SIZE+1].b = max(leds[i].r+i, 255); 
-        }
-        
-         
-//      if (gRenderingSettings != LEFT_STRIP_ONLY) {
-//        leds2[i] = leds[i];
-//        
-//        if (gRenderingSettings == RIGHT_STRIP_ONLY) { 
-//          leds[i] = CRGB::Black;
-//        }
-//      
-//      } else { 
-//        leds2[i] = CRGB::Black;
-//      }
-#endif 
+    leds2[left].fadeToBlackBy(FADING_RATE);
+    leds2[right].fadeToBlackBy(FADING_RATE); 
+    
 
-//      if (i < STRIP_SIZE - NUM_LEDS) { 
-//        // Copy to the front side
-//        leds[STRIP_SIZE-i-1] = leds[i];
-//        // Dim the back by max 50%
-//        leds[i].fadeLightBy(128*(1/i+1));
-//      }
-   }
+    //Randomly re-fuel some of the LEDs that are currently lit (1% chance per cycle)
+    //This enhances the twinkling effect.
+    if (leds2[left].r > 10) {
+      if (random8(100) < 1) {
+        //Set the red channel to a value of 80
+        leds2[left].r = 80;
+        //Increase the green channel to 20 - to add to the effect
+        leds2[left].g = 20;
+      }
+    } 
+    if (leds2[right].b > 10) { 
+      if (random8(100 < 1)) { 
+        leds2[right].b = 80; 
+        leds2[right].g = 20;  
+      }
+    }
+
+    
+
+
+    //        if (leds[2].r > 20 && random8() % 4)
+    //          leds[i].r = max(leds[i].r+i, 255);
+    //        else if (leds2[STRIP2_SIZE+i].b && random8() % 4) {
+    //          leds2[STRIP2_SIZE+1].b = max(leds[i].r+i, 255);
+    //        }
+
+
+    //      if (gRenderingSettings != LEFT_STRIP_ONLY) {
+    //        leds2[i] = leds[i];
+    //
+    //        if (gRenderingSettings == RIGHT_STRIP_ONLY) {
+    //          leds[i] = CRGB::Black;
+    //        }
+    //
+    //      } else {
+    //        leds2[i] = CRGB::Black;
+    //      }
+#endif
+
+    //      if (i < STRIP_SIZE - NUM_LEDS) {
+    //        // Copy to the front side
+    //        leds[STRIP_SIZE-i-1] = leds[i];
+    //        // Dim the back by max 50%
+    //        leds[i].fadeLightBy(128*(1/i+1));
+    //      }
+
 
   }
 
+ 
   // Go back to default
   //gRenderingSettings = BOTH_STRIPS;
-  
+
 }
 
- 
+
 void loop() {
   random16_add_entropy(random8());
-  
+
   button.tick();
-  mButton.tick2();
-  
+  //mButton.tick2();
+
   uint8_t arg1 = gSequence[gCurrentPatternNumber].mArg1;
   uint8_t arg2 = gSequence[gCurrentPatternNumber].mArg2;
   Animation animate = gSequence[gCurrentPatternNumber].mPattern;
-  
+
   uint8_t animDelay = animate(arg1, arg2);
 
-  // Should it be reversed to pump into the heart? 
+  // Should it be reversed to pump into the heart?
   mirrorLedsToSecondaryStrips();
-  
-  #if REVERSE_LEDS
-    reverseLeds();
-  #endif
-  
-  switch(animDelay) { 
-    
+
+#if REVERSE_LEDS
+  reverseLeds();
+#endif
+
+  switch (animDelay) {
+
     case RANDOM_DELAY: {
-      // Sync random delay to an increasing BPM as the animations progress 
-      uint8_t bpmDelay = beatsin8(gCurrentPatternNumber, 100, 255);
-      delay_at_max_brightness_for_power(bpmDelay);
-      break;
-    }
+        // Sync random delay to an increasing BPM as the animations progress
+        uint8_t bpmDelay = beatsin8(gCurrentPatternNumber, 100, 255);
+        delay_at_max_brightness_for_power(bpmDelay);
+        break;
+      }
 
     case SYNCED_DELAY: delayToSyncFrameRate(FRAMES_PER_SECOND); break;
-    
+
     case STATIC_DELAY: delay_at_max_brightness_for_power(70); break;
 
     default: delay_at_max_brightness_for_power(animDelay);
   };
 
-  show_at_max_brightness_for_power();      
+  show_at_max_brightness_for_power();
 
   // Autoplay (5 mins)
 #if AUTOPLAY_ENABLED
-  EVERY_N_SECONDS(SECONDS_PER_ANIMATION) { 
+  EVERY_N_SECONDS(SECONDS_PER_ANIMATION) {
     gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
     gSequence = gAnimations;
   }
-#endif   
-  
+#endif
+
   // blend the current palette to the next
   EVERY_N_MILLISECONDS(40) {
     gHue++;  // slowly cycle the "base color" through the rainbow
     nblendPaletteTowardPalette(currentPalette, targetPalette, 16);
     nblendPaletteTowardPalette(gCurrentGradientPalette, gTargetGradientPalette, 16);
   }
-  
+
   // slowly change to a new palette
   EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
-    
+
     //FastLed Palettes
-    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes)); 
+    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
     targetPalette = gPalettes[gCurrentPaletteIndex];
 
-    PRINT("Change CTC Palette"); 
+    PRINT("Change CTC Palette");
     // dummy code
     gTargetGradientPalette = gPalettes[gCurrentPaletteIndex];
-    
+
     //CPC Gradient Palettes
-//    gGradientPaletteIndex = addmod8(gGradientPaletteIndex, 1, gGradientPaletteCount);
-//    gTargetGradientPalette = gGradientPalettes[gGradientPaletteIndex];
+    //    gGradientPaletteIndex = addmod8(gGradientPaletteIndex, 1, gGradientPaletteCount);
+    //    gTargetGradientPalette = gGradientPalettes[gGradientPaletteIndex];
   };
-  
-  #ifdef DEBUG
-  EVERY_N_MILLISECONDS(3000) {Serial.print("FPS: ");Serial.print(FastLED.getFPS()); Serial.print(" ||  BATTERY LEVEL: "); Serial.println(batteryLevel()); }
-  #endif
-} 
+
+#ifdef DEBUG
+  EVERY_N_MILLISECONDS(3000) {
+    Serial.print("FPS: ");
+    Serial.print(FastLED.getFPS());
+    Serial.print(" ||  BATTERY LEVEL: ");
+    Serial.println(batteryLevel());
+  }
+#endif
+}
 
 
 

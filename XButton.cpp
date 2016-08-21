@@ -112,11 +112,39 @@ void XButton::tick2(void)
 {
   _input.read(); 
 
+  static long second = 0; 
+  
+  // we will print off the state every second
+  if(millis() - second >= 1000) {
+    Serial.print("pin.high(): ");
+    Serial.print(_input.high());
+    Serial.print(", pin.low(): ");
+    Serial.print(_input.low());
+    if(_input.low()) {
+      Serial.println(", Button is DOWN");
+    }
+    else {
+      Serial.println(", Button is UP");
+    }
+    second = millis();
+  }
+  
+  if(_input.changing()) {
+      Serial.print("Button changing");
+  } 
+  if(_input.rising()) {
+      Serial.println(", button being RELEASED");
+  } 
+  if(_input.falling()) {
+      Serial.println(", button being PRESSED");
+  } 
+
   int buttonLevel = 0;
 
   // This doesn't support pin to VCC, but only pin to ground (mode true)
   if (_input.low()) { 
     // button is down
+    Serial.println("button is down from membrane"); 
     buttonLevel = _buttonPressed;  
   } else { 
     buttonLevel = _buttonReleased; 
@@ -204,6 +232,7 @@ void XButton::tick(void)
   // Implementation of the state machine
   if (_state == 0) { // waiting for menu pin being pressed.
     if (buttonLevel == _buttonPressed) {
+      Serial.println("tick() button pressed"); 
       _state = 1; // step to state 1
       _startTime = now; // remember starting time
     } // if
@@ -216,6 +245,7 @@ void XButton::tick(void)
       _state = 0;
 
     } else if (buttonLevel == _buttonReleased) {
+      Serial.println("tick() button released"); 
       _state = 2; // step to state 2
 
     } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {
