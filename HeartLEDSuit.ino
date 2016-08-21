@@ -146,7 +146,10 @@ volatile uint8_t gCurrentPatternNumber = 0;
  * Event Handlers
  */
 
-
+void onClickFromMembrane() { 
+  PRINT("Click from membrane:");
+  onClick(); 
+}
 void onClick() { 
   //Next animation
 
@@ -262,11 +265,10 @@ void setup() {
   
   // Button
   button.attachClick(onClick);
+  button.attachDoubleClick(onDoubleClick); 
   button.setClickTicks(100); 
-  button.attachLongPressStart(onLongPressStart);
-  button.attachLongPressStop(onLongPressEnd);
 
-  mButton.attachClick(onClick); 
+  mButton.attachClick(onClickFromMembrane); 
   mButton.attachDoubleClick(onDoubleClick); 
   mButton.attachLongPressStart(onLongPressStart); 
   mButton.attachLongPressStop(onLongPressEnd); 
