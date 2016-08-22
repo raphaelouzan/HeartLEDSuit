@@ -144,7 +144,6 @@ void XButton::tick2(void)
   // This doesn't support pin to VCC, but only pin to ground (mode true)
   if (_input.low()) { 
     // button is down
-    Serial.println("button is down from membrane"); 
     buttonLevel = _buttonPressed;  
   } else { 
     buttonLevel = _buttonReleased; 
@@ -222,6 +221,8 @@ void XButton::tick2(void)
   } // if  
 } // XButton.tick()
 
+
+
 void XButton::tick(void)
 {
   // Detect the input information 
@@ -232,7 +233,6 @@ void XButton::tick(void)
   // Implementation of the state machine
   if (_state == 0) { // waiting for menu pin being pressed.
     if (buttonLevel == _buttonPressed) {
-      Serial.println("tick() button pressed"); 
       _state = 1; // step to state 1
       _startTime = now; // remember starting time
     } // if
@@ -245,7 +245,6 @@ void XButton::tick(void)
       _state = 0;
 
     } else if (buttonLevel == _buttonReleased) {
-      Serial.println("tick() button released"); 
       _state = 2; // step to state 2
 
     } else if ((buttonLevel == _buttonPressed) && ((unsigned long)(now - _startTime) > _pressTicks)) {

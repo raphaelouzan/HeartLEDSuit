@@ -6,7 +6,7 @@
 */
 #define USE_2ND_STRIP    1
 #define USE_SETTINGS     0
-#define DEBUG
+//#define DEBUG
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -41,7 +41,7 @@ struct CRGB leds2[STRIP2_SIZE * 2];
 #define HEART_BUTTON_PIN      13
 #define MEMBRANE_BUTTON_PIN   A1
 Button button(HEART_BUTTON_PIN, false);
-Button mButton(MEMBRANE_BUTTON_PIN, true);
+XButton mButton(MEMBRANE_BUTTON_PIN, true);
 
 /**
    Animations
@@ -206,7 +206,7 @@ void onTripleClick() {
 
 void showBatteryLevel() {
 
-  float mV = batteryLevel() * 1000;
+  float mV = getBatteryLevel() * 1000;
   PRINTX("Battery level:", mV);
 
   uint8_t  lvl = (mV >= BATT_MAX_MV) ? NUM_LEDS : // Full (or nearly)
@@ -229,6 +229,7 @@ void showBatteryLevel() {
   }
   delay(1500);
 }
+
 /**
    Setup
 */
@@ -266,7 +267,7 @@ void setup() {
   button.setClickTicks(100);
 
   mButton.attachClick(onClickFromMembrane);
-  mButton.attachDoubleClick(onDoubleClick);
+//  mButton.attachDoubleClick(onDoubleClick);
   mButton.attachLongPressStart(onLongPressStart);
   mButton.attachLongPressStop(onLongPressEnd);
   mButton.attachTripleClick(onTripleClick);
@@ -334,7 +335,7 @@ void loop() {
   random16_add_entropy(random8());
 
   button.tick();
-  //mButton.tick();
+  mButton.tick();
 
   uint8_t arg1 = gSequence[gCurrentPatternNumber].mArg1;
   uint8_t arg2 = gSequence[gCurrentPatternNumber].mArg2;
@@ -404,7 +405,7 @@ void loop() {
     Serial.print("FPS: ");
     Serial.print(FastLED.getFPS());
     Serial.print(" ||  BATTERY LEVEL: ");
-    Serial.println(batteryLevel());
+    Serial.println(getBatteryLevel());
   }
 #endif
 }
