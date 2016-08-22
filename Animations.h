@@ -57,6 +57,8 @@ uint8_t gRenderingSettings = BOTH_STRIPS;
 #include "FiboMatrix.h" 
 #include "FiboLife.h"
 
+#include "TwinkleFox.h"
+
 
 uint8_t cylon(uint8_t strip, uint8_t num2) {
   static int step = 0;
@@ -113,13 +115,22 @@ uint8_t bpm(uint8_t bpmSpeed, uint8_t stripeWidth) {
 
 }
 
-uint8_t sinelon(uint8_t bpmSpeed, uint8_t fadeAmount) {
-  // a colored dot sweeping back and forth, with fading trails
+uint8_t sinelon(uint8_t bpmSpeed = 13, uint8_t fadeAmount = 20) {
+  // a colored dot sweeping 
+  // back and forth, with 
+  // fading trails
   fadeToBlackBy(leds, NUM_LEDS, fadeAmount);
-  int pos = beatsin16(bpmSpeed, 0, NUM_LEDS);
-  leds[pos] += CHSV(gHue, 255, 192);
+  int pos = beatsin16(13, 0, NUM_LEDS);
+  static int prevpos = 0;
+  if(pos < prevpos) { 
+    fill_solid(leds+pos, (prevpos-pos)+1, CHSV(gHue, 220, 255));
+  } else { 
+    fill_solid(leds+prevpos, (pos-prevpos)+1, CHSV(gHue, 220, 255));
+  }
+  
+  prevpos = pos;
 
-  return NO_DELAY;
+  return NO_DELAY; 
 }
 
 // An animation to play while the crowd goes wild after the big performance
@@ -225,49 +236,6 @@ uint8_t beatCubic8x(accum88 beats_per_minute, uint8_t lowest = 0, uint8_t highes
   uint8_t scaledbeat = scale8(beatsin, rangewidth);
   uint8_t result = lowest + scaledbeat;
   return result;
-}
-
-// WIP
-uint8_t breathing(uint8_t bpmSpeed, uint8_t fadeAmount) {
-
-  int length = beatCubic8x(bpmSpeed, 0, NUM_LEDS, 3);
-  int light = beatCubic8x(bpmSpeed, 100, 255, 3);
-
-  static bool inhale = true;
-
-  if (inhale) {
-    gRenderingSettings = BOTH_STRIPS;
-    leds[length] = CHSV(HUE_BLUE, 255, light);
-    leds[length].b = random8(120);
-  } else {
-    gRenderingSettings = RIGHT_STRIP_ONLY;
-    for (int i = 0; i < length; i++) {
-      leds[i] = CHSV(HUE_RED, 255, light);
-      leds[length].r = random8();
-    }
-
-    if (length % 3) {
-      for (int i = 0; i < length; i++) {
-        if (leds[i].r > 10) {
-          if (random8(100) < 20) {
-            leds[i].r = 80;
-            leds[i].g = 20;
-          }
-        }
-      }
-    }
-
-    fadeToBlackBy(leds, NUM_LEDS, light);
-  }
-
-
-  if (length == 0) {
-    inhale = false;
-  } else if (length == NUM_LEDS - 1) {
-    inhale = true;
-  }
-
-  return STATIC_DELAY;
 }
 
 
@@ -376,28 +344,6 @@ uint8_t pride(uint8_t a, uint8_t b) {
 }
 
 
-/*
-   Drop Animations
-*/
-
-
-// TODO Placeholder animation. Need real progress bar action
-// TODO Maybe try CRGB HeatColor(uint8_t temperature) with a rising temp
-// or focus on the middle and expand from there
-uint8_t aboutToDrop(uint8_t a, uint8_t b) {
-
-  static uint8_t bpmAmount = 2;
-
-  sinelon(bpmAmount++, 0);
-  bpmAmount %= 160;
-
-  return NO_DELAY;
-}
-
-uint8_t dropped(uint8_t a, uint8_t b) {
-  bpm(125, random(5, 10));
-  return NO_DELAY;
-}
 
 /*
    Touch Animations
@@ -678,6 +624,51 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
   return wantedDelay;
 }
 
+uint8_t breathing(uint8_t bpmSpeed, uint8_t fadeAmount) {
+
+  int length = beatCubic8x(bpmSpeed, 0, NUM_LEDS, 3);
+  int light = beatCubic8x(bpmSpeed, 100, 200, 3);
+
+  static bool inhale = true;
+
+  if (inhale) {
+    gRenderingSettings = BOTH_STRIPS;
+    leds[length] = CHSV(HUE_BLUE, 255, light);
+    leds[length].b = random8(120);
+  } else {
+    gRenderingSettings = RIGHT_STRIP_ONLY;
+    for (int i = 0; i < length; i++) {
+      leds[i] = CHSV(HUE_RED, 255, light);
+      leds[length].r = random8();
+    }
+
+    if (length % 3) {
+      for (int i = 0; i < length; i++) {
+        if (leds[i].r > 10) {
+          if (random8(100) < 20) {
+            leds[i].r = 80;
+            leds[i].g = 20;
+          }
+        }
+      }
+    }
+
+    fadeAndTwinkleBlood(light); 
+    //fadeToBlackBy(leds, NUM_LEDS, light);
+  }
+
+  
+  if (length == 0) {
+    inhale = false;
+  } else if (length == NUM_LEDS - 1) {
+    inhale = true;
+  }
+
+  return STATIC_DELAY;
+}
+
+
+
 // new animation to try
 
 uint8_t juggle2(uint8_t a, uint8_t b)
@@ -715,4 +706,61 @@ uint8_t juggle2(uint8_t a, uint8_t b)
 
   return 8;
 }
+
+
+uint8_t twinkleFox(uint8_t defaultSpeed = 6, uint8_t defaultDensity = 1) {
+  
+  EVERY_N_MILLISECONDS( 10 ) {
+    nblendPaletteTowardPalette( currentTwinklePalette, targetTwinklePalette, 12);
+  }
+
+  static int tspeed = defaultSpeed;
+  static int tdensity = defaultDensity;
+  
+  EVERY_N_SECONDS(10) { 
+    chooseNextColorPalette( targetTwinklePalette );
+    
+    tspeed = max((tspeed + 1) % 9, 6);
+    tdensity = max((tdensity + 1) % 9, 1); 
+    PRINTX("Speed:", tspeed); 
+    PRINTX("Density:", tdensity); 
+  }
+  drawTwinkles(tspeed, tdensity);
+
+  return NO_DELAY;
+}
+
+
+/*
+   Drop Animations
+*/
+
+uint8_t aboutToDropBPM = 1; 
+uint8_t aboutToDropDots = 255;
+
+void initDropAnimations() { 
+  // reset 
+  aboutToDropBPM = 1;
+  aboutToDropDots = 30; 
+}
+
+// TODO Placeholder animation. Need real progress bar action
+// TODO Maybe try CRGB HeatColor(uint8_t temperature) with a rising temp
+// or focus on the middle and expand from there
+uint8_t aboutToDrop(uint8_t a, uint8_t b) {
+
+  // increase BPM
+  EVERY_N_MILLISECONDS(500) { aboutToDropDots = min(aboutToDropDots+1, 100); PRINTX("dots:", aboutToDropDots); } 
+  EVERY_N_MILLISECONDS(500) { aboutToDropBPM += 1; PRINTX("bpm", aboutToDropBPM);}
+  
+  return juggle(aboutToDropDots, aboutToDropBPM);
+}
+
+uint8_t dropped(uint8_t a, uint8_t b) {
+  discostrobe(120, 2); 
+  return NO_DELAY;
+}
+
+
+
 

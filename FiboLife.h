@@ -438,14 +438,15 @@ uint8_t verticalRainbow(uint8_t dummy, uint8_t dummy2) {
 uint8_t radialPaletteShift(uint8_t dummy, uint8_t dummy2) { 
   return radialPaletteShift();
 }
-uint8_t fire(uint8_t dummy, uint8_t dummy2) { 
+uint8_t fiboFire(uint8_t dummy, uint8_t dummy2) { 
   heatMap(HeatColors_p, true);  
   return RANDOM_DELAY;
 }
 
+// Way too fast
 uint8_t water(uint8_t dummy, uint8_t dummy2) { 
   heatMap(IceColors_p, false); 
-  return 30; 
+  return SYNCED_DELAY; 
 }
 
 

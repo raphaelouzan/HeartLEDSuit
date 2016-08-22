@@ -5,7 +5,7 @@
    Variable Components
 */
 #define USE_2ND_STRIP    1
-#define USE_SETTINGS     1
+#define USE_SETTINGS     0
 #define DEBUG
 #include "DebugUtils.h"
 
@@ -41,7 +41,7 @@ struct CRGB leds2[STRIP2_SIZE * 2];
 #define HEART_BUTTON_PIN      13
 #define MEMBRANE_BUTTON_PIN   A1
 Button button(HEART_BUTTON_PIN, false);
-XButton mButton(MEMBRANE_BUTTON_PIN, true);
+Button mButton(MEMBRANE_BUTTON_PIN, true);
 
 /**
    Animations
@@ -49,9 +49,9 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
 #include "Animations.h"
 //#include "GradientPalettes.h"
 // 10 seconds per color palette makes a good demo, 20-120 is better for deployment
-#define SECONDS_PER_PALETTE    10
+#define SECONDS_PER_PALETTE    20
 #define AUTOPLAY_ENABLED       1
-#define SECONDS_PER_ANIMATION  300
+#define SECONDS_PER_ANIMATION  180 // 3 mins
 
 
 /*
@@ -73,23 +73,29 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
 */
 AnimationPattern gAnimations[] = {
 
-  {soundAnimate, 1, 0},
-
   {soundAnimate, 0, 0},
+
+  {soundAnimate, 1, 0},
 
   {beatTriggered, 20, 100},
 
+  {sinelon, 120, 2}, 
+   
   // breathing full colors, rapid changes of color tones. #warm #powerful
   {wave, 0, 0},
 
+  {discostrobe, 40, 2}, 
+
+  // should use the general palette
+  {twinkleFox, 6, 1},
+    
+  {multiFire, 70, 60},
+
   // [use CPT]
-  {colorWaves, 0, 0},
   {colorWaves, 1, 0}, // using Fibonacci, I think this one is the best
 
   // Slowercolor changes, create powerful color effects #mesmerizing [use CPT]
   {radialPaletteShift, 0, 0},
-
-  {fire, 0, 0},
 
   // Fully colored, subtle changes [use CPT]
   {incrementalDrift, 0, 0},
@@ -98,26 +104,14 @@ AnimationPattern gAnimations[] = {
 
   {life, 0, 0},
 
-  // not sure about this one yet
-  {multiFire2, 50, 200},
-
-  {water, 0, 0},
-
-  {blueFire, 100, 200},
-
-  // TODO should add fadeAndTwinkleBlood
-  {breathing, 16, 64},
+  {breathing, 24, 33},
 
   {pride,    0,   0},
 
-  // way too slow
+  // make ripple work with color palette
   {ripple,  60,  40},
 
-  /* good for strips not for heart
-    {sinelon,  7, 32},
-    {sinelon,  7, 4},
-
-  */
+  {sinelon,  13, 4},
 
   {juggle,   4, 8},
 
@@ -127,14 +121,13 @@ AnimationPattern gAnimations[] = {
   {applause, HUE_BLUE, HUE_RED},
 
   {confetti, 20, 10},
-  {confetti, 16,  3},
 
-  {bpm,      125, 7}
+  {bpm,      120, 7}
 };
 
 AnimationPattern gDropAnimations[] = {
   {aboutToDrop, 100, 200},
-  {dropped, 100, 200}
+  {discostrobe, 120, 2}
 };
 
 // Default sequence to main animations
@@ -185,6 +178,8 @@ void onLongPressStart() {
   PRINT("Long press");
 
   gSequence = gDropAnimations;
+  initDropAnimations(); 
+  
   gCurrentPatternNumber = 0;
 }
 
@@ -299,11 +294,10 @@ static void delayToSyncFrameRate(uint8_t framesPerSecond) {
 #define FADING_RATE 5
 void mirrorLedsToSecondaryStrips() {
 
-  // Assumes STRIP2_SIZE is shorter than NUM_LEDS and STRIP_SIZE 
-  for (int left = 0, right = STRIP2_SIZE; left < STRIP2_SIZE; left++, right++) {
-
 #if USE_2ND_STRIP
 
+  // Assumes STRIP2_SIZE is shorter than NUM_LEDS and STRIP_SIZE
+  for (int left = 0, right = STRIP2_SIZE; left < STRIP2_SIZE; left++, right++) {
 
     // Copy one for one for the left strip
     leds2[left] = leds[left];
@@ -311,8 +305,7 @@ void mirrorLedsToSecondaryStrips() {
     leds2[right] = leds[FIRST_2_RINGS_NUM_LEDS + left];
 
     leds2[left].fadeToBlackBy(FADING_RATE);
-    leds2[right].fadeToBlackBy(FADING_RATE); 
-    
+    leds2[right].fadeToBlackBy(FADING_RATE);
 
     //Randomly re-fuel some of the LEDs that are currently lit (1% chance per cycle)
     //This enhances the twinkling effect.
@@ -323,50 +316,17 @@ void mirrorLedsToSecondaryStrips() {
         //Increase the green channel to 20 - to add to the effect
         leds2[left].g = 20;
       }
-    } 
-    if (leds2[right].b > 10) { 
-      if (random8(100 < 1)) { 
-        leds2[right].b = 80; 
-        leds2[right].g = 20;  
+    }
+    if (leds2[right].b > 10) {
+      if (random8(100 < 1)) {
+        leds2[right].b = 80;
+        leds2[right].g = 20;
       }
     }
 
-    
-
-
-    //        if (leds[2].r > 20 && random8() % 4)
-    //          leds[i].r = max(leds[i].r+i, 255);
-    //        else if (leds2[STRIP2_SIZE+i].b && random8() % 4) {
-    //          leds2[STRIP2_SIZE+1].b = max(leds[i].r+i, 255);
-    //        }
-
-
-    //      if (gRenderingSettings != LEFT_STRIP_ONLY) {
-    //        leds2[i] = leds[i];
-    //
-    //        if (gRenderingSettings == RIGHT_STRIP_ONLY) {
-    //          leds[i] = CRGB::Black;
-    //        }
-    //
-    //      } else {
-    //        leds2[i] = CRGB::Black;
-    //      }
-#endif
-
-    //      if (i < STRIP_SIZE - NUM_LEDS) {
-    //        // Copy to the front side
-    //        leds[STRIP_SIZE-i-1] = leds[i];
-    //        // Dim the back by max 50%
-    //        leds[i].fadeLightBy(128*(1/i+1));
-    //      }
-
-
   }
 
- 
-  // Go back to default
-  //gRenderingSettings = BOTH_STRIPS;
-
+#endif
 }
 
 
@@ -374,7 +334,7 @@ void loop() {
   random16_add_entropy(random8());
 
   button.tick();
-  //mButton.tick2();
+  //mButton.tick();
 
   uint8_t arg1 = gSequence[gCurrentPatternNumber].mArg1;
   uint8_t arg2 = gSequence[gCurrentPatternNumber].mArg2;
@@ -411,6 +371,7 @@ void loop() {
 #if AUTOPLAY_ENABLED
   EVERY_N_SECONDS(SECONDS_PER_ANIMATION) {
     gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
+    PRINTX("AUTOPLAY - Moving to the next animation", gCurrentPatternNumber);
     gSequence = gAnimations;
   }
 #endif
