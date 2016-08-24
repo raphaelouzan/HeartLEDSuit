@@ -6,7 +6,7 @@
 */
 #define USE_2ND_STRIP    1
 #define USE_SETTINGS     0
-//#define DEBUG
+#define DEBUG
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -46,10 +46,14 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
 /**
    Animations
 */
+
+#include "PaletteMgr.h"
+PaletteMgr palettes; 
 #include "Animations.h"
+
 //#include "GradientPalettes.h"
 // 10 seconds per color palette makes a good demo, 20-120 is better for deployment
-#define SECONDS_PER_PALETTE    20
+#define SECONDS_PER_PALETTE    10
 #define AUTOPLAY_ENABLED       1
 #define SECONDS_PER_ANIMATION  180 // 3 mins
 
@@ -72,6 +76,10 @@ XButton mButton(MEMBRANE_BUTTON_PIN, true);
    Sequencing
 */
 AnimationPattern gAnimations[] = {
+
+  //{soundAnimate, 2, 0},
+
+  {beatTriggered, 20, 100},
 
   {soundAnimate, 0, 0},
 
@@ -167,8 +175,7 @@ void onDoubleClick() {
 
   if (gCurrentPatternNumber == 0 || gCurrentPatternNumber == 1) {
     // We're already at the first animation - spice things up
-    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
-    currentPalette = gPalettes[gCurrentPaletteIndex];
+    palettes.moveToNextPalette();
   } else {
     gCurrentPatternNumber = 0;
   }
@@ -343,7 +350,6 @@ void loop() {
 
   uint8_t animDelay = animate(arg1, arg2);
 
-  // Should it be reversed to pump into the heart?
   mirrorLedsToSecondaryStrips();
 
 #if REVERSE_LEDS
@@ -380,24 +386,12 @@ void loop() {
   // blend the current palette to the next
   EVERY_N_MILLISECONDS(40) {
     gHue++;  // slowly cycle the "base color" through the rainbow
-    nblendPaletteTowardPalette(currentPalette, targetPalette, 16);
-    nblendPaletteTowardPalette(gCurrentGradientPalette, gTargetGradientPalette, 16);
+    palettes.blendPalettes(); 
   }
 
   // slowly change to a new palette
   EVERY_N_SECONDS(SECONDS_PER_PALETTE) {
-
-    //FastLed Palettes
-    gCurrentPaletteIndex = addmod8(gCurrentPaletteIndex, 1, ARRAY_SIZE(gPalettes));
-    targetPalette = gPalettes[gCurrentPaletteIndex];
-
-    PRINT("Change CTC Palette");
-    // dummy code
-    gTargetGradientPalette = gPalettes[gCurrentPaletteIndex];
-
-    //CPC Gradient Palettes
-    //    gGradientPaletteIndex = addmod8(gGradientPaletteIndex, 1, gGradientPaletteCount);
-    //    gTargetGradientPalette = gGradientPalettes[gGradientPaletteIndex];
+    palettes.queueNextPalette();
   };
 
 #ifdef DEBUG
@@ -405,7 +399,9 @@ void loop() {
     Serial.print("FPS: ");
     Serial.print(FastLED.getFPS());
     Serial.print(" ||  BATTERY LEVEL: ");
-    Serial.println(getBatteryLevel());
+    Serial.print(getBatteryLevel());
+    Serial.print(" || AnimationIndex: "); 
+    Serial.println(gCurrentPatternNumber);
   }
 #endif
 }

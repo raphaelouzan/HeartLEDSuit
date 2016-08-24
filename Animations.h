@@ -8,19 +8,9 @@
  * Palette definitions 
  */
 
-// FastLED Palettes 
-
-CRGBPalette16 gPalettes[] = {RainbowColors_p, RainbowStripeColors_p, LavaColors_p, HeatColors_p,
-                             CloudColors_p, OceanColors_p, ForestColors_p, PartyColors_p
-                            };
-uint8_t gCurrentPaletteIndex = 0;
-uint8_t gGradientPaletteIndex = 0;
-
-CRGBPalette16 currentPalette(CRGB::Black);
-CRGBPalette16 targetPalette = gPalettes[gCurrentPaletteIndex];
-
+// TODO placeholder, moving over to PaletteMgr
 CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
-CRGBPalette16 gTargetGradientPalette = gPalettes[gCurrentPaletteIndex];
+CRGBPalette16 gTargetGradientPalette = RainbowColors_p; 
 
 
 //#include "GradientPalettes.h" 
@@ -593,7 +583,7 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
     if (step <= 40) {
       // Systole paint with redish blood
       //leds[step] = ColorFromPalette(gCurrentGradientPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
-      leds[step] = ColorFromPalette(currentPalette, 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
+      leds[step] = ColorFromPalette(palettes.getPalette(), 90 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
       if (random8(2) % 2) leds[step].r = random8();
       
       if (step == 40) {
@@ -601,7 +591,7 @@ uint8_t beatTriggered(uint8_t delayBetweenHeartbeats /*multiplied by 100, defaul
       }
     } else if (step <= 100) {
       // Diastole painted with blueish blood
-      leds[step] = ColorFromPalette(currentPalette, 180 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
+      leds[step] = ColorFromPalette(palettes.getPalette(), 180 + map(step, 0, NUM_LEDS-1, 0, 255), 100, LINEARBLEND);
       if (random8(2) % 2) leds[step].b = random8(120);
       
       if (step == 100) {

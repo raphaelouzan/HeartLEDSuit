@@ -64,7 +64,7 @@ uint8_t life() {
   {
     for (uint8_t j = 0; j < kMatrixHeight; j++)
     {
-      setPixelXY(i, j, ColorFromPalette(currentPalette, world[i][j].hue * 4, world[i][j].brightness, LINEARBLEND));
+      setPixelXY(i, j, ColorFromPalette(palettes.getPalette(), world[i][j].hue * 4, world[i][j].brightness, LINEARBLEND));
     }
   }
 
@@ -204,6 +204,8 @@ uint8_t wave() {
 
   uint8_t n = 0;
 
+  CRGBPalette16 currentPalette = palettes.getPalette();
+  
   switch (rotation) {
     case 0:
       for (int x = 0; x < kMatrixWidth; x++) {
@@ -277,7 +279,7 @@ uint8_t pulse() {
 
   if (step == 0)
   {
-    drawCircle(centerX, centerY, step, ColorFromPalette(currentPalette, gHue, 255, LINEARBLEND));
+    drawCircle(centerX, centerY, step, ColorFromPalette(palettes.getPalette(), gHue, 255, LINEARBLEND));
     step++;
   }
   else
@@ -285,11 +287,11 @@ uint8_t pulse() {
     if (step < maxSteps)
     {
       // initial pulse
-      drawCircle(centerX, centerY, step, ColorFromPalette(currentPalette, gHue, pow(fadeRate, step - 2) * 255, LINEARBLEND));
+      drawCircle(centerX, centerY, step, ColorFromPalette(palettes.getPalette(), gHue, pow(fadeRate, step - 2) * 255, LINEARBLEND));
 
       // secondary pulse
       if (step > 3) {
-        drawCircle(centerX, centerY, step - 3, ColorFromPalette(currentPalette, gHue, pow(fadeRate, step - 2) * 255, LINEARBLEND));
+        drawCircle(centerX, centerY, step - 3, ColorFromPalette(palettes.getPalette(), gHue, pow(fadeRate, step - 2) * 255, LINEARBLEND));
       }
 
       step++;
