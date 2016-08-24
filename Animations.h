@@ -4,19 +4,6 @@
   #error "Requires FastLED 3.1 or later; check github for latest code."
 #endif
 
-/*
- * Palette definitions 
- */
-
-// TODO placeholder, moving over to PaletteMgr
-CRGBPalette16 gCurrentGradientPalette(CRGB::Black);
-CRGBPalette16 gTargetGradientPalette = RainbowColors_p; 
-
-
-//#include "GradientPalettes.h" 
-
-
-
 uint8_t gHue = 0;
 
 /**
@@ -286,7 +273,7 @@ uint8_t multiFire(uint8_t cooling, uint8_t sparking) {
 }
 
 uint8_t multiFire2(uint8_t cooling, uint8_t sparking) { 
-  return fire(cooling, sparking, gCurrentGradientPalette);
+  return fire(cooling, sparking, palettes.getGradientPalette());
 }
 
 // From Marks Kriegman's https://gist.github.com/kriegsman/964de772d64c502760e5

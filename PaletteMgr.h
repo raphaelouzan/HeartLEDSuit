@@ -79,6 +79,11 @@ class PaletteMgr {
       return *_currentPalette;
     }
 
+    // stub
+    CRGBPalette16& getGradientPalette() { 
+      return getPalette(); 
+    }
+
 
   private:
 

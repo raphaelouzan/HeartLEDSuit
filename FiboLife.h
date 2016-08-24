@@ -370,7 +370,7 @@ uint8_t radialPaletteShift() {
     // leds[i] = ColorFromPalette( currentPalette, gHue + sin8(i*16), brightness);
     uint8_t index = fibonacciToPhysicalOrder[(NUM_LEDS - 1) - i];
 
-    leds[index] = ColorFromPalette(gCurrentGradientPalette, i + gHue, 255, LINEARBLEND);
+    leds[index] = ColorFromPalette(palettes.getGradientPalette(), i + gHue, 255, LINEARBLEND);
   }
 
   return 8;
@@ -380,7 +380,7 @@ uint8_t incrementalDrift() {
   uint8_t stepwidth = 256 * (20 - 1) / NUM_LEDS;
   for (uint8_t i = 0; i < NUM_LEDS; i++) {
     uint8_t bri = beatsin88(1 * 256 + (NUM_LEDS - i) * stepwidth, 0, 256);
-    leds[fibonacciToPhysicalOrder[i]] = ColorFromPalette(gCurrentGradientPalette, 2.5 * i + gHue, bri, LINEARBLEND);
+    leds[fibonacciToPhysicalOrder[i]] = ColorFromPalette(palettes.getGradientPalette(), 2.5 * i + gHue, bri, LINEARBLEND);
   }
 
   return 8;
@@ -410,7 +410,7 @@ uint8_t verticalRainbow()
 CRGBPalette16 IceColors_p = CRGBPalette16(CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White);
 
 uint8_t colorWaves(uint8_t useFibonacci, uint8_t dummy) {
-  colorwaves(leds, NUM_LEDS, gCurrentGradientPalette, useFibonacci ? true : false);
+  colorwaves(leds, NUM_LEDS, palettes.getGradientPalette(), useFibonacci ? true : false);
   return 20;
 }
 
