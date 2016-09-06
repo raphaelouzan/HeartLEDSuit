@@ -739,5 +739,26 @@ uint8_t dropped(uint8_t a, uint8_t b) {
 }
 
 
+// animation routine wrapper 
+uint8_t testPalette(uint8_t secondsPerPalette = 1, uint8_t gradientPalette = 0) { 
+  
+  static int gradientPaletteIndex = 0; 
+  EVERY_N_SECONDS(secondsPerPalette) { 
+
+#ifdef CPT
+    if (gradientPalette) { 
+      palettes.getGradientPalette(gradientPaletteIndex); 
+      gradientPaletteIndex = addmod8(gradientPaletteIndex, 1, palettes.getGradientPaletteCount());
+    }
+#endif
+
+    palettes.testPalette(leds, NUM_LEDS);
+    PRINT("Next palette");
+    palettes.moveToNextPalette();
+  }
+
+  return STATIC_DELAY; 
+}
+
 
 

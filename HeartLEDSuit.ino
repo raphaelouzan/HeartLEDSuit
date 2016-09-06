@@ -4,9 +4,10 @@
 /**
    Variable Components
 */
-#define USE_2ND_STRIP    1
-#define USE_SETTINGS     0
-#define DEBUG
+#define USE_2ND_STRIP       1
+#define USE_SETTINGS        0
+#define USE_MEMBRANE_SWITCH 0
+//#define DEBUG
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -37,23 +38,25 @@ struct CRGB leds2[STRIP2_SIZE * 2];
    Button Switcher
 */
 #include "Button.h"
-#include "XButton.h"
 #define HEART_BUTTON_PIN      13
-#define MEMBRANE_BUTTON_PIN   A1
 Button button(HEART_BUTTON_PIN, false);
+#if USE_MEMBRANE_SWITCH
+#include "XButton.h"
+#define MEMBRANE_BUTTON_PIN   A1
 XButton mButton(MEMBRANE_BUTTON_PIN, true);
+#endif
 
 /**
    Animations
 */
 
 #include "PaletteMgr.h"
-PaletteMgr palettes; 
+PaletteMgr palettes;
 #include "Animations.h"
 
 //#include "GradientPalettes.h"
 // 10 seconds per color palette makes a good demo, 20-120 is better for deployment
-#define SECONDS_PER_PALETTE    10
+#define SECONDS_PER_PALETTE    30
 #define AUTOPLAY_ENABLED       1
 #define SECONDS_PER_ANIMATION  180 // 3 mins
 
@@ -77,26 +80,21 @@ PaletteMgr palettes;
 */
 AnimationPattern gAnimations[] = {
 
-  //{soundAnimate, 2, 0},
+   // test pulse - no
+  {soundAnimate, 2, 10}, 
 
   {beatTriggered, 20, 100},
 
-  {soundAnimate, 0, 0},
+  {sinelon, 120, 2},
 
-  {soundAnimate, 1, 0},
-
-  {beatTriggered, 20, 100},
-
-  {sinelon, 120, 2}, 
-   
   // breathing full colors, rapid changes of color tones. #warm #powerful
   {wave, 0, 0},
 
-  {discostrobe, 40, 2}, 
+  {discostrobe, 40, 2},
 
   // should use the general palette
   {twinkleFox, 6, 1},
-    
+
   {multiFire, 70, 60},
 
   // [use CPT]
@@ -143,23 +141,18 @@ volatile AnimationPattern* gSequence = gAnimations;
 // Index number of which pattern is current
 volatile uint8_t gCurrentPatternNumber = 0;
 
-/**
-   Event Handlers
-*/
-
 void onClickFromMembrane() {
   PRINT("Click from membrane:");
   onClick();
 }
 void onClick() {
-  //Next animation
-
+  
   showBeat(250);
 
-  // we're on a different animation sequence
   if (gSequence == gAnimations) {
     gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
   } else {
+    // we're on a different animation sequence
     gCurrentPatternNumber = 0;
     gSequence = gAnimations;
   }
@@ -185,8 +178,8 @@ void onLongPressStart() {
   PRINT("Long press");
 
   gSequence = gDropAnimations;
-  initDropAnimations(); 
-  
+  initDropAnimations();
+
   gCurrentPatternNumber = 0;
 }
 
@@ -254,7 +247,6 @@ void setup() {
 
 
 #if USE_2ND_STRIP
-  // Should address both sides separately and use the different sides
   FastLED.addLeds<NEOPIXEL, LED2_PIN>(leds2, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
   FastLED.addLeds<NEOPIXEL, LED3_PIN>(leds2, STRIP2_SIZE, STRIP2_SIZE).setCorrection(TypicalLEDStrip);
 #endif
@@ -273,13 +265,14 @@ void setup() {
   button.attachLongPressStop(onLongPressEnd);
   button.setClickTicks(100);
 
+#if USE_MEMBRANE_SWITCH
   mButton.attachClick(onClickFromMembrane);
-//  mButton.attachDoubleClick(onDoubleClick);
+  //  mButton.attachDoubleClick(onDoubleClick);
   mButton.attachLongPressStart(onLongPressStart);
   mButton.attachLongPressStop(onLongPressEnd);
   mButton.attachTripleClick(onTripleClick);
   mButton.setClickTicks(600);
-
+#endif
 }
 
 static void delayToSyncFrameRate(uint8_t framesPerSecond) {
@@ -342,7 +335,9 @@ void loop() {
   random16_add_entropy(random8());
 
   button.tick();
+#if USE_MEMBRANE_SWITCH
   mButton.tick();
+#endif
 
   uint8_t arg1 = gSequence[gCurrentPatternNumber].mArg1;
   uint8_t arg2 = gSequence[gCurrentPatternNumber].mArg2;
@@ -351,10 +346,6 @@ void loop() {
   uint8_t animDelay = animate(arg1, arg2);
 
   mirrorLedsToSecondaryStrips();
-
-#if REVERSE_LEDS
-  reverseLeds();
-#endif
 
   switch (animDelay) {
 
@@ -377,16 +368,20 @@ void loop() {
   // Autoplay (5 mins)
 #if AUTOPLAY_ENABLED
   EVERY_N_SECONDS(SECONDS_PER_ANIMATION) {
+
+    // Don't run autoplay on drop squence or first animation
+    if (gSequence != gAnimations || gCurrentPatternNumber == 0) return;
+
     gCurrentPatternNumber =  addmod8(gCurrentPatternNumber, 1, ARRAY_SIZE(gAnimations));
-    PRINTX("AUTOPLAY - Moving to the next animation", gCurrentPatternNumber);
     gSequence = gAnimations;
+    PRINTX("AUTOPLAY - Moving to the next animation", gCurrentPatternNumber);
   }
 #endif
 
   // blend the current palette to the next
   EVERY_N_MILLISECONDS(40) {
     gHue++;  // slowly cycle the "base color" through the rainbow
-    palettes.blendPalettes(); 
+    palettes.blendPalettes();
   }
 
   // slowly change to a new palette
@@ -400,8 +395,10 @@ void loop() {
     Serial.print(FastLED.getFPS());
     Serial.print(" ||  BATTERY LEVEL: ");
     Serial.print(getBatteryLevel());
-    Serial.print(" || AnimationIndex: "); 
-    Serial.println(gCurrentPatternNumber);
+    Serial.print(" || AnimationIndex: ");
+    Serial.print(gCurrentPatternNumber);
+    Serial.println("");
+ 
   }
 #endif
 }

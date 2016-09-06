@@ -410,7 +410,8 @@ uint8_t verticalRainbow()
 CRGBPalette16 IceColors_p = CRGBPalette16(CRGB::Black, CRGB::Blue, CRGB::Aqua, CRGB::White);
 
 uint8_t colorWaves(uint8_t useFibonacci, uint8_t dummy) {
-  colorwaves(leds, NUM_LEDS, palettes.getGradientPalette(), useFibonacci ? true : false);
+  CRGBPalette16 pal = palettes.getGradientPalette();
+  colorwaves(leds, NUM_LEDS, pal, useFibonacci ? true : false);
   return 20;
 }
 
