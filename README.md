@@ -24,5 +24,11 @@ Components
 --
 Ask me for the models. 
 
+Thanks
+-- 
+
+A lot of this code is based on the outstanding work of Mark Kriegsman and its fantastic library FastLED, as well as some from Andrew Tuline. Also incorporated some of the animation work by Evil Genius Lab (https://github.com/evilgeniuslabs/fibonacci-v3d) and SparksFun (https://github.com/bartlettmic/SparkFun-RGB-LED-Music-Sound-Visualizer-Arduino-Code/blob/master/Visualizer_Program/Visualizer_Program.ino)
+
 Any questions? Email me. 
+
 

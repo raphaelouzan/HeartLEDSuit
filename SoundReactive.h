@@ -1,5 +1,10 @@
 #include <FastLED.h>
 
+/*
+soundPulse, paletteDance and and glitter are largely inspired by: 
+https://github.com/bartlettmic/SparkFun-RGB-LED-Music-Sound-Visualizer-Arduino-Code/blob/master/Visualizer_Program/Visualizer_Program.ino
+*/
+
 #define DC_OFFSET  0                                         // DC offset in mic signal - if unusure, leave 0
                                                               // I calculated this value by serialprintln lots of mic values
 #define NOISE     10                                         // Noise/hum/interference in mic signal and increased value until it went quiet
