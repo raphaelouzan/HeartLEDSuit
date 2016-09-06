@@ -3,6 +3,7 @@ HeartLEDSuit
 
 Pics
 --
+![](https://dl.dropboxusercontent.com/s/ci1m4tjgjf7rtxt/heart3d.png)
 ![](https://dl.dropboxusercontent.com/s/qvjkystrvuncded/2016-08-17%2011.18.35-1.jpg)
 ![](https://dl.dropboxusercontent.com/s/4kcs0t9yn2hxuc7/2016-08-20%2015.29.36.jpg)
 Check it out in action (video): https://www.dropbox.com/s/v7lb8sfhy8hkwl4/2016-08-21%2020.09.04.mov?dl=0
