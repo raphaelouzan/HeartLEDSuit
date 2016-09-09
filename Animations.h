@@ -19,7 +19,7 @@ typedef struct {
 
 typedef enum delayType {
   RANDOM_DELAY = 2,
-  STATIC_DELAY = 3,
+  STATIC_DELAY = 70,
   NO_DELAY     = 1,
   SYNCED_DELAY = 4
 } delayType;

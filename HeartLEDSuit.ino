@@ -7,7 +7,8 @@
 #define USE_2ND_STRIP       1
 #define USE_SETTINGS        0
 #define USE_MEMBRANE_SWITCH 0
-//#define DEBUG
+#define USE_IOT             0
+#define DEBUG
 #include "DebugUtils.h"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
@@ -59,6 +60,8 @@ PaletteMgr palettes;
 #define SECONDS_PER_PALETTE    30
 #define AUTOPLAY_ENABLED       1
 #define SECONDS_PER_ANIMATION  180 // 3 mins
+
+
 
 
 /*
@@ -141,10 +144,7 @@ volatile AnimationPattern* gSequence = gAnimations;
 // Index number of which pattern is current
 volatile uint8_t gCurrentPatternNumber = 0;
 
-void onClickFromMembrane() {
-  PRINT("Click from membrane:");
-  onClick();
-}
+
 void onClick() {
   
   showBeat(250);
@@ -159,6 +159,9 @@ void onClick() {
 
   PRINTX("Click - Moving to animation:", gCurrentPatternNumber);
 }
+
+void onClickFromMembrane() { PRINT("Click from membrane:"); onClick();   }
+void onClickFromIoT()      { PRINT("Remote Click from IoT:"); onClick(); }
 
 void onDoubleClick() {
   //Reseting to first animation
@@ -230,6 +233,14 @@ void showBatteryLevel() {
   delay(1500);
 }
 
+/* 
+  IoT Wifi Client
+*/ 
+#if USE_IOT
+#include "IOTClient.h"
+#define IOT_LOOP_BLOCKING_TIME 3 // 3 ms per loop to fetch updates
+#endif 
+
 /**
    Setup
 */
@@ -237,7 +248,13 @@ void showBatteryLevel() {
 
 void setup() {
 
-  delay(2000); DEBUG_START(57600)
+#if USE_IOT
+  setupIoTConnection();
+#else 
+  delay(1000);
+#endif  
+
+  DEBUG_START(57600)
 
   PRINT("HeartLEDSuit starting...");
 
@@ -273,6 +290,8 @@ void setup() {
   mButton.attachTripleClick(onTripleClick);
   mButton.setClickTicks(600);
 #endif
+
+
 }
 
 static void delayToSyncFrameRate(uint8_t framesPerSecond) {
@@ -330,6 +349,71 @@ void mirrorLedsToSecondaryStrips() {
 #endif
 }
 
+#define BRIGHTNESS_FALLRATE  40
+
+void decreaseBrightness() { 
+
+  static uint8_t easeOutVal = 0;
+  static uint8_t easeInVal  = 0;
+  static uint8_t newBrightness    = 0;
+
+  easeOutVal = ease8InOutQuad(easeInVal);
+  easeInVal++;
+
+  newBrightness = lerp8by8(0, 255/*max brightness*/, easeOutVal);
+
+  PRINTX("Lowering brightness to:", newBrightness); 
+
+  FastLED.setBrightness(newBrightness); 
+}
+
+// Experimental: make the animation fade and glitter to a BPM 
+void bpmFilter(uint8_t bpm = 60) { 
+
+  static int state = 0; 
+  const uint8_t numStates = 4; 
+
+  static uint8_t prevBeat = 0; 
+
+
+  EVERY_N_SECONDS(10) {state = addmod8(state, 1, numStates); PRINTX("BPM - Moving to state", state);}
+
+  EVERY_N_SECONDS(BRIGHTNESS_FALLRATE) { decreaseBrightness(); }
+
+  uint8_t x = 0; 
+
+  if (state == 0) { 
+    x = beat8(bpm); 
+    fadeLightBy(leds, NUM_LEDS, 255-x);
+  } else if (state == 1) { 
+    x = beatsin8(bpm); 
+    fadeLightBy(leds, NUM_LEDS, 255-x);
+  } else if (state == 2) { 
+    x = beat8(bpm); 
+
+    if (x < prevBeat) { 
+      // beat lowering
+      fadeLightBy(leds, NUM_LEDS, 255-x);
+    }    
+  } else if (state == 3) { 
+    x = beat8(bpm);
+    // Alternatively turn off the first 2 rings then the large ring
+    if (x < prevBeat) { 
+      fadeLightBy(leds, 40, 255-x);
+    }  else { 
+      // rising
+      fadeLightBy(&leds[40], 60, 255-x);
+    }
+  }
+
+  prevBeat = x;
+
+  /*
+  Try to play with the two rings, when going down use the center rings then up use the outer ring 
+
+  or even with the colors: hue = map8( sin8( myValue), HUE_BLUE, HUE_RED);
+  */
+}
 
 void loop() {
   random16_add_entropy(random8());
@@ -347,21 +431,30 @@ void loop() {
 
   mirrorLedsToSecondaryStrips();
 
-  switch (animDelay) {
+  //bpmFilter(); 
 
-    case RANDOM_DELAY: {
-        // Sync random delay to an increasing BPM as the animations progress
-        uint8_t bpmDelay = beatsin8(gCurrentPatternNumber, 100, 255);
-        delay_at_max_brightness_for_power(bpmDelay);
-        break;
-      }
+  uint32_t delayTimeDelta = 0; 
 
-    case SYNCED_DELAY: delayToSyncFrameRate(FRAMES_PER_SECOND); break;
+#if USE_IOT
+  uint32_t curr_time = millis(); 
+  loopMQTT(IOT_LOOP_BLOCKING_TIME);
+  delayTimeDelta = millis() - curr_time; 
+#endif  
 
-    case STATIC_DELAY: delay_at_max_brightness_for_power(70); break;
+  uint8_t delayToWait = animDelay; 
 
-    default: delay_at_max_brightness_for_power(animDelay);
-  };
+  if (animDelay != NO_DELAY) { 
+    if (animDelay == SYNCED_DELAY) { 
+      delayToSyncFrameRate(FRAMES_PER_SECOND);
+    } else { 
+      if (animDelay == RANDOM_DELAY) { 
+        // TODO Try to sync on actual BPM 
+        delayToWait = beatsin8(gCurrentPatternNumber, 100, 255); 
+      } 
+      delayToWait = max(delayToWait-delayTimeDelta, delayTimeDelta); 
+      delay_at_max_brightness_for_power(delayToWait);
+    } 
+  }
 
   show_at_max_brightness_for_power();
 
